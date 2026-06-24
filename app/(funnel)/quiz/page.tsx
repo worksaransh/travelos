@@ -9,6 +9,8 @@ import {
   ensureUserAndProfile,
   submitQuestionnaireResponse,
   getDestinations,
+  submitWhatsAppLead,
+  generateItineraryForProfile,
   City,
   Country
 } from "@/lib/supabase";
@@ -33,7 +35,10 @@ function QuizContent() {
   const [destinations, setDestinations] = useState<{ countries: Country[]; cities: City[] } | null>(null);
 
   // States
-  const [step, setStep] = useState<"tier0" | "teaser" | "tier1" | "complete">("tier0");
+  const [step, setStep] = useState<"tier0" | "teaser" | "tier1" | "gate1" | "complete">("tier0");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [activeQuestion, setActiveQuestion] = useState(0); // 0 to 4
   const [userId, setUserId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -121,7 +126,40 @@ function QuizContent() {
         console.error("Failed submitting Tier 1 sliders:", err);
       }
     }
-    setStep("complete");
+    setStep("gate1");
+  };
+
+  // Handle WhatsApp capture submit
+  const handleGate1Submit = async () => {
+    if (!whatsapp.trim()) {
+      setErrorMsg("Please enter a valid WhatsApp number.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      if (profileId) {
+        // 1. Submit lead details (RLS bypassed on insert)
+        await submitWhatsAppLead(profileId, whatsapp);
+
+        // 2. Compute Travel DNA and generate Itinerary
+        const res = await generateItineraryForProfile(profileId, sliders, answers);
+
+        if (res?.itineraryId) {
+          // 3. Redirect to /itinerary/[id]
+          router.push(`/itinerary/${res.itineraryId}`);
+          return;
+        }
+      }
+      setErrorMsg("Failed to generate itinerary. Please try again.");
+    } catch (err) {
+      console.error("Failed submitting Gate 1:", err);
+      setErrorMsg("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Rendering Functions
@@ -475,6 +513,59 @@ function QuizContent() {
               className="bg-ink-indigo hover:bg-ink-indigo/90 text-white py-4 w-full mt-4"
             >
               Confirm DNA Profile
+            </Button>
+          </div>
+        )}
+
+        {step === "gate1" && (
+          <div
+            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6 text-center animate-fade-in"
+            style={{
+              borderRadius: "var(--radius)",
+              boxShadow: "var(--theme-shadow)",
+            }}
+          >
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
+                Final Step
+              </span>
+              <h2 className="text-2xl font-display font-bold text-ink-indigo">
+                Get Your Curated Itinerary
+              </h2>
+              <p className="text-xs text-dusk-teal">
+                We'll text you the complete travel plan on WhatsApp.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 text-left">
+              <label htmlFor="whatsapp" className="text-xs font-semibold text-dusk-teal">
+                WhatsApp Number
+              </label>
+              <input
+                id="whatsapp"
+                type="tel"
+                placeholder="e.g. +91 98765 43210"
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                className="p-3 border border-border rounded-xl bg-transparent text-sm focus:ring-1 focus:ring-marigold outline-none"
+              />
+              <span className="text-[10px] text-dusk-teal/70 leading-normal">
+                By clicking below, you consent to receive curated travel plans and marketing messages from JourneyOS.
+              </span>
+            </div>
+
+            {errorMsg && (
+              <span className="text-xs text-rose-500 text-left font-semibold">
+                {errorMsg}
+              </span>
+            )}
+
+            <Button
+              onClick={handleGate1Submit}
+              disabled={loading}
+              className="bg-marigold hover:bg-marigold/90 text-white font-semibold py-4 w-full mt-2"
+            >
+              {loading ? "Generating Full Itinerary..." : "Send me my full itinerary"}
             </Button>
           </div>
         )}

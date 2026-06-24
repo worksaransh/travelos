@@ -346,3 +346,632 @@ export async function submitQuestionnaireResponse(
     return { success: true }; // Fallback returns success to avoid UI freezing
   }
 }
+
+// ==========================================
+// SCORING & PERSONA CLASSIFICATION (GAP 2)
+// ==========================================
+
+export async function calculateAndSaveScores(
+  profileId: string,
+  sliders: Record<string, number>,
+  answers: { occasion?: string; groupType?: string; budgetValue?: number; budgetType?: string; hotelCategory?: string }
+) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Calculating scores for profile:", profileId);
+    return;
+  }
+
+  try {
+    // 1. Get dimension tags
+    const { data: tags, error: te } = await supabase.from("dimension_tags").select("*");
+    if (te || !tags) throw te || new Error("Failed fetching dimension tags");
+
+    // 2. Get scoring weights config
+    const { data: weights, error: we } = await supabase.from("scoring_weights_config").select("*");
+    if (we || !weights) throw we || new Error("Failed fetching weights config");
+
+    // 3. Map hotel category and budget band values for scoring
+    const hotelCategory = answers.hotelCategory || "4_star";
+    const hotelVal = hotelCategory === "luxury" ? 100 : hotelCategory === "5_star" ? 80 : hotelCategory === "4_star" ? 60 : hotelCategory === "3_star" ? 40 : 20;
+    const budgetVal = (answers.budgetValue || 120000) >= 200000 ? 100 : (answers.budgetValue || 120000) >= 100000 ? 70 : 40;
+
+    // 4. Calculate score for each dimension
+    for (const tag of tags) {
+      const tagWeights = weights.filter((w) => w.dimension_tag_id === tag.id);
+      
+      let score = 0;
+      const sliderVal = sliders[tag.dimension_name] !== undefined ? sliders[tag.dimension_name] : 50;
+
+      if (tagWeights.length === 0) {
+        // Fallback default: 80% slider, 20% implicit (defaulting implicit to 50)
+        score = sliderVal * 0.8 + 50 * 0.2;
+      } else {
+        for (const w of tagWeights) {
+          if (w.weight_component === "slider_input") {
+            score += sliderVal * Number(w.weight_value);
+          } else if (w.weight_component === "hotel_category_pref") {
+            score += hotelVal * Number(w.weight_value);
+          } else if (w.weight_component === "budget_band") {
+            score += budgetVal * Number(w.weight_value);
+          } else if (w.weight_component === "implicit_signal") {
+            // Default implicit signals score to 50 if no implicit events exist
+            score += 50 * Number(w.weight_value);
+          }
+        }
+      }
+
+      // 5. Upsert dimension score
+      await supabase.from("dimension_scores").upsert({
+        profile_id: profileId,
+        dimension_tag_id: tag.id,
+        score_value: score
+      }, { onConflict: "profile_id,dimension_tag_id" });
+    }
+  } catch (err) {
+    console.error("Failed calculating or saving dimension scores:", err);
+  }
+}
+
+export async function classifyTravelPersona(profileId: string): Promise<{ travelPersona: string; budgetPersona: string }> {
+  // Mock fallback logic
+  const mockFallback = { travelPersona: "The Practical Planner", budgetPersona: "Comfort" };
+
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Classifying persona for profile:", profileId);
+    return mockFallback;
+  }
+
+  try {
+    // 1. Fetch user questionnaire responses
+    const { data: responses, error: re } = await supabase
+      .from("questionnaire_responses")
+      .select("question_id, answer_value")
+      .eq("profile_id", profileId);
+
+    if (re || !responses) throw re || new Error("Failed fetching questionnaire responses");
+
+    const answerMap: Record<string, any> = {};
+    responses.forEach((r) => {
+      answerMap[r.question_id] = r.answer_value;
+    });
+
+    // Extract key parameters
+    const occasion = answerMap["occasion"] || "Vacation";
+    const groupType = answerMap["group_type"] || "couple";
+    const budgetValue = Number(answerMap["budget_value"]) || 120000;
+    const budgetType = answerMap["budget_type"] || "total";
+    const hotelCategory = answerMap["hotel_category"] || "4_star";
+    const hiddenGems = answerMap["hidden_gems"] || "no";
+
+    // 2. Fetch computed scores
+    const { data: scores, error: se } = await supabase
+      .from("dimension_scores")
+      .select("dimension_tag_id, score_value")
+      .eq("profile_id", profileId);
+
+    if (se || !scores) throw se || new Error("Failed fetching dimension scores");
+
+    const { data: tags } = await supabase.from("dimension_tags").select("*");
+    const tagMap: Record<string, string> = {};
+    tags?.forEach((t) => {
+      tagMap[t.id] = t.dimension_name;
+    });
+
+    const scoreMap: Record<string, number> = {};
+    scores.forEach((s) => {
+      const name = tagMap[s.dimension_tag_id];
+      if (name) scoreMap[name] = Number(s.score_value);
+    });
+
+    // Make sure all 10 dimensions have a score in our map
+    const dimensions = ["Luxury", "Adventure", "Shopping", "Food", "Nature", "Nightlife", "Culture", "Photography", "Relaxation", "Local Experiences"];
+    dimensions.forEach((d) => {
+      if (scoreMap[d] === undefined) scoreMap[d] = 50;
+    });
+
+    // 3. Determine budget persona based on budget value and selection
+    // Strict if budget per person is low, or total budget per person is low (e.g. <= 150000 INR)
+    const normalizedPerPersonBudget = budgetType === "per_person" ? budgetValue : budgetValue / (groupType === "solo" ? 1 : groupType === "couple" ? 2 : groupType === "family" ? 4 : 4);
+    const budgetPersona = normalizedPerPersonBudget <= 150000 ? "Value-Conscious/Strict" : "Flexible";
+
+    // Sort dimensions to find top matches
+    const sortedDims = [...dimensions].sort((a, b) => scoreMap[b] - scoreMap[a]);
+    const top1 = sortedDims[0];
+    const top2 = sortedDims[1];
+    const top3 = sortedDims[2];
+
+    const luxuryScore = scoreMap["Luxury"] || 50;
+    const relaxationScore = scoreMap["Relaxation"] || 50;
+    const cultureScore = scoreMap["Culture"] || 50;
+    const foodScore = scoreMap["Food"] || 50;
+    const adventureScore = scoreMap["Adventure"] || 50;
+
+    // 4. Query classification rules ordered from DB
+    const { data: rules } = await supabase
+      .from("persona_classification_rules")
+      .select("rule_order, condition_logic, resulting_persona_id")
+      .order("rule_order", { ascending: true });
+
+    if (rules && rules.length > 0) {
+      // Fetch personas map to get names
+      const { data: personasList } = await supabase.from("personas").select("id, name");
+      const personaNameMap: Record<string, string> = {};
+      personasList?.forEach((p) => {
+        personaNameMap[p.id] = p.name;
+      });
+
+      // Sequential evaluation of rules
+      for (const rule of rules) {
+        const cond = rule.condition_logic as any;
+        const personaName = personaNameMap[rule.resulting_persona_id || ""];
+        if (!personaName) continue;
+
+        // Evaluate Rule 1: Occasion = Business
+        if (rule.rule_order === 1 && occasion === "Business") {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 2: Honeymoon/Anniversary AND romance-adjacent high
+        if (rule.rule_order === 2 && (occasion === "Honeymoon" || occasion === "Anniversary")) {
+          const romanceHigh = luxuryScore >= 60 || relaxationScore >= 60 || foodScore >= 60;
+          if (romanceHigh) {
+            return { travelPersona: personaName, budgetPersona };
+          }
+        }
+
+        // Evaluate Rule 3: Group = Family (unless Adventure/Culture dominate heavily)
+        if (rule.rule_order === 3 && groupType === "family") {
+          const adventureCultureDominate = adventureScore >= 75 || cultureScore >= 75;
+          if (!adventureCultureDominate) {
+            return { travelPersona: personaName, budgetPersona };
+          }
+        }
+
+        // Evaluate Rule 4: Luxury Score > 60 AND Budget = Value-Conscious/Strict
+        if (rule.rule_order === 4 && luxuryScore > 60 && budgetPersona === "Value-Conscious/Strict") {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 5: Relaxation+Nature
+        if (rule.rule_order === 5 && sortedDims.slice(0, 2).includes("Relaxation") && sortedDims.slice(0, 2).includes("Nature")) {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 6: Adventure+Nature
+        if (rule.rule_order === 6 && sortedDims.slice(0, 2).includes("Adventure") && sortedDims.slice(0, 2).includes("Nature")) {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 7: Culture+Local Experiences+Photography (top-2/3 match rule)
+        if (rule.rule_order === 7) {
+          const matchCount = sortedDims.slice(0, 3).filter((d) => 
+            d === "Culture" || d === "Local Experiences" || d === "Photography"
+          ).length;
+          if (matchCount >= 2) {
+            return { travelPersona: personaName, budgetPersona };
+          }
+        }
+
+        // Evaluate Rule 8: Luxury+flexible budget
+        if (rule.rule_order === 8 && sortedDims.slice(0, 2).includes("Luxury") && budgetPersona === "Flexible") {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 9: Nightlife+Shopping
+        if (rule.rule_order === 9 && sortedDims.slice(0, 2).includes("Nightlife") && sortedDims.slice(0, 2).includes("Shopping")) {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 10: Food+Local Experiences
+        if (rule.rule_order === 10 && sortedDims.slice(0, 2).includes("Food") && sortedDims.slice(0, 2).includes("Local Experiences")) {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 11: Local Experiences + hidden gems
+        if (rule.rule_order === 11 && sortedDims.slice(0, 2).includes("Local Experiences") && hiddenGems === "yes") {
+          return { travelPersona: personaName, budgetPersona };
+        }
+
+        // Evaluate Rule 12: Fallback (no dimension > 60)
+        if (rule.rule_order === 12) {
+          const maxScore = Math.max(...Object.values(scoreMap));
+          if (maxScore <= 60) {
+            return { travelPersona: personaName, budgetPersona };
+          }
+        }
+      }
+    }
+
+    // Default Fallback
+    return { travelPersona: "The Practical Planner", budgetPersona };
+  } catch (err) {
+    console.error("Failed executing persona classification rules:", err);
+    return mockFallback;
+  }
+}
+
+export async function finalizeDNAProfile(
+  profileId: string,
+  sliders: Record<string, number>,
+  answers: any
+) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Finalizing DNA profile:", profileId);
+    return { travelPersona: "The Practical Planner", budgetPersona: "Comfort" };
+  }
+
+  try {
+    // 1. Save hotel category to responses first
+    if (answers.hotelCategory) {
+      await submitQuestionnaireResponse(profileId, 0, "hotel_category", answers.hotelCategory);
+    }
+    if (answers.hiddenGems) {
+      await submitQuestionnaireResponse(profileId, 0, "hidden_gems", answers.hiddenGems);
+    }
+
+    // 2. Calculate and save dimension scores
+    await calculateAndSaveScores(profileId, sliders, answers);
+
+    // 3. Classify persona using db rules
+    const { travelPersona, budgetPersona } = await classifyTravelPersona(profileId);
+
+    // 4. Update travel DNA profile
+    const { error: pe } = await supabase
+      .from("travel_dna_profiles")
+      .update({
+        travel_persona: travelPersona,
+        budget_persona: budgetPersona,
+        last_updated: new Date().toISOString()
+      })
+      .eq("id", profileId);
+
+    if (pe) throw pe;
+
+    return { travelPersona, budgetPersona };
+  } catch (err) {
+    console.error("Failed finalization of DNA Profile:", err);
+    return { travelPersona: "The Practical Planner", budgetPersona: "Comfort" };
+  }
+}
+
+export async function submitWhatsAppLead(profileId: string, whatsapp: string) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] WhatsApp Lead Submitted:", whatsapp);
+    return { success: true };
+  }
+
+  try {
+    const { data: profile, error: pe } = await supabase
+      .from("travel_dna_profiles")
+      .select("user_id")
+      .eq("id", profileId)
+      .single();
+    if (pe || !profile) throw pe || new Error("Profile not found");
+
+    const userId = profile.user_id;
+
+    const { error: le } = await supabase.from("leads").insert({
+      user_id: userId,
+      capture_gate: "gate1_whatsapp",
+      whatsapp_number: whatsapp,
+      consent_given: true,
+      consent_timestamp: new Date().toISOString(),
+      consent_version: "v1"
+    });
+    if (le) throw le;
+
+    const { error: ue } = await supabase
+      .from("users")
+      .update({
+        lifecycle_stage: "engaged",
+        consent_status: "gate1_whatsapp"
+      })
+      .eq("id", userId);
+    if (ue) throw ue;
+
+    return { success: true };
+  } catch (err) {
+    console.error("Failed submitting WhatsApp lead:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function generateItineraryForProfile(
+  profileId: string,
+  sliders: Record<string, number>,
+  answers: any
+) {
+  if (isDummyMode()) {
+    return { itineraryId: crypto.randomUUID() };
+  }
+
+  try {
+    const { travelPersona, budgetPersona } = await finalizeDNAProfile(profileId, sliders, answers);
+
+    const { data: profile, error: pe } = await supabase
+      .from("travel_dna_profiles")
+      .select("user_id")
+      .eq("id", profileId)
+      .single();
+    if (pe || !profile) throw pe || new Error("Profile not found");
+    const userId = profile.user_id;
+
+    const destSlug = (answers.destinationSlug || "singapore").toLowerCase();
+    let cityId = "c1000000-0000-0000-0000-000000000001"; // default Singapore UUID
+    const { data: cityData } = await supabase.from("cities").select("id").ilike("name", destSlug).single();
+    if (cityData?.id) {
+      cityId = cityData.id;
+    }
+
+    const durationDays = Number(answers.durationDays) || 5;
+    const budgetVal = Number(answers.budgetValue) || 120000;
+
+    const { data: newItinerary, error: itError } = await supabase
+      .from("itineraries")
+      .insert({
+        user_id: userId,
+        dna_snapshot_id: profileId,
+        destination_city_id: cityId,
+        status: "active",
+        package_tier: budgetPersona === "Flexible" ? "Premium" : "Comfort",
+        total_price_estimate: budgetVal
+      })
+      .select("id")
+      .single();
+    if (itError || !newItinerary) throw itError || new Error("Failed creating itinerary");
+
+    const itineraryId = newItinerary.id;
+
+    const { data: experiences } = await supabase
+      .from("experiences")
+      .select("id")
+      .eq("supplier_bookable_flag", true);
+
+    const expIds = experiences?.map((e) => e.id) || [
+      "e0000000-0000-0000-0000-000000000004", // Gardens by the Bay
+      "e0000000-0000-0000-0000-000000000003", // Marina Bay Sands
+      "e0000000-0000-0000-0000-000000000001", // USS
+      "e0000000-0000-0000-0000-000000000005", // Orchard Road Shopping
+      "e0000000-0000-0000-0000-000000000002"  // Beach Clubs
+    ];
+
+    for (let dayNum = 1; dayNum <= durationDays; dayNum++) {
+      const { data: dayData, error: dayError } = await supabase
+        .from("itinerary_days")
+        .insert({
+          itinerary_id: itineraryId,
+          day_number: dayNum
+        })
+        .select("id")
+        .single();
+      if (dayError || !dayData) throw dayError || new Error("Failed creating itinerary day");
+
+      const dayId = dayData.id;
+
+      const primaryExpIndex = (dayNum - 1) % expIds.length;
+      await supabase.from("itinerary_items").insert({
+        itinerary_day_id: dayId,
+        experience_id: expIds[primaryExpIndex],
+        sequence_order: 1,
+        upsell_flag: false
+      });
+
+      if (dayNum % 2 === 1) {
+        const secondaryExpIndex = (dayNum) % expIds.length;
+        await supabase.from("itinerary_items").insert({
+          itinerary_day_id: dayId,
+          experience_id: expIds[secondaryExpIndex],
+          sequence_order: 2,
+          upsell_flag: false
+        });
+      }
+    }
+
+    return { itineraryId };
+  } catch (err) {
+    console.error("Failed generating itinerary:", err);
+    throw err;
+  }
+}
+
+export async function getItinerary(itineraryId: string) {
+  if (isDummyMode()) {
+    return {
+      itinerary: {
+        id: itineraryId,
+        title: "Your Custom Singapore Itinerary",
+        package_tier: "Comfort",
+        total_price_estimate: 120000,
+        destination_city_id: "c1000000-0000-0000-0000-000000000001",
+        cities: { name: "Singapore", countries: { name: "Singapore" } },
+        travel_dna_profiles: { travel_persona: "The Practical Planner", budget_persona: "Comfort" }
+      },
+      days: [
+        {
+          id: "day1",
+          day_number: 1,
+          itinerary_items: [
+            {
+              id: "item1",
+              sequence_order: 1,
+              experiences: {
+                id: "e0000000-0000-0000-0000-000000000004",
+                name: "Gardens by the Bay",
+                price_band: "medium",
+                category: "Nature",
+                is_signature_experience: true
+              }
+            }
+          ]
+        }
+      ]
+    };
+  }
+
+  try {
+    const { data: itinerary, error: ie } = await supabase
+      .from("itineraries")
+      .select(`
+        *,
+        cities (
+          name,
+          countries (name)
+        ),
+        travel_dna_profiles (
+          travel_persona,
+          budget_persona
+        )
+      `)
+      .eq("id", itineraryId)
+      .single();
+
+    if (ie || !itinerary) throw ie || new Error("Itinerary not found");
+
+    const { data: days, error: de } = await supabase
+      .from("itinerary_days")
+      .select(`
+        *,
+        itinerary_items (
+          *,
+          experiences (
+            *
+          )
+        )
+      `)
+      .eq("itinerary_id", itineraryId)
+      .order("day_number", { ascending: true });
+
+    if (de) throw de;
+
+    const formattedDays = days?.map((day: any) => {
+      const items = day.itinerary_items || [];
+      items.sort((a: any, b: any) => a.sequence_order - b.sequence_order);
+      return {
+        ...day,
+        itinerary_items: items
+      };
+    }) || [];
+
+    return {
+      itinerary,
+      days: formattedDays
+    };
+  } catch (err) {
+    console.error("Failed fetching itinerary:", err);
+    throw err;
+  }
+}
+
+export async function checkLifecycleStage(profileId: string): Promise<string> {
+  if (isDummyMode()) return "engaged";
+  try {
+    const { data: profile } = await supabase.from("travel_dna_profiles").select("user_id").eq("id", profileId).single();
+    if (!profile) return "lead";
+    const { data: user } = await supabase.from("users").select("lifecycle_stage").eq("id", profile.user_id).single();
+    return user?.lifecycle_stage || "lead";
+  } catch {
+    return "lead";
+  }
+}
+
+export async function checkoutBookingGate(
+  itineraryId: string,
+  name: string,
+  email: string,
+  preferredTime: string
+) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Gate 2 checkout submitted for itinerary:", itineraryId);
+    return { success: true };
+  }
+
+  try {
+    const { data: itinerary, error: ie } = await supabase
+      .from("itineraries")
+      .select("user_id")
+      .eq("id", itineraryId)
+      .single();
+    if (ie || !itinerary) throw ie || new Error("Itinerary not found");
+
+    const userId = itinerary.user_id;
+
+    const { error: le } = await supabase.from("leads").insert({
+      user_id: userId,
+      capture_gate: "gate2_full",
+      email: email,
+      name: name,
+      preferred_contact_time: preferredTime,
+      consent_given: true,
+      consent_timestamp: new Date().toISOString(),
+      consent_version: "v1"
+    });
+    if (le) throw le;
+
+    const { error: ue } = await supabase
+      .from("users")
+      .update({
+        lifecycle_stage: "booking_intent",
+        consent_status: "gate2_full"
+      })
+      .eq("id", userId);
+    if (ue) throw ue;
+
+    return { success: true };
+  } catch (err) {
+    console.error("Failed submitting checkout details:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function submitDripResponseAndUpdateDNA(
+  profileId: string,
+  questionId: string,
+  answerValue: string,
+  dimension: string,
+  scoreDelta: number
+) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Drip Question Submitted:", questionId, "Value:", answerValue);
+    return { success: true };
+  }
+
+  try {
+    await supabase.from("implicit_signals").insert({
+      profile_id: profileId,
+      event_type: "drip_question_select",
+      event_metadata: { question_id: questionId, answer_value: answerValue, dimension, score_delta: scoreDelta }
+    });
+
+    const { data: tagData } = await supabase.from("dimension_tags").select("id").eq("dimension_name", dimension).single();
+    if (tagData?.id) {
+      const { data: scoreObj } = await supabase
+        .from("dimension_scores")
+        .select("score_value")
+        .eq("profile_id", profileId)
+        .eq("dimension_tag_id", tagData.id)
+        .single();
+      
+      const currentScore = scoreObj ? Number(scoreObj.score_value) : 50;
+      const newScore = Math.max(0, Math.min(100, currentScore + scoreDelta));
+
+      await supabase.from("dimension_scores").upsert({
+        profile_id: profileId,
+        dimension_tag_id: tagData.id,
+        score_value: newScore
+      }, { onConflict: "profile_id,dimension_tag_id" });
+
+      const { travelPersona, budgetPersona } = await classifyTravelPersona(profileId);
+      await supabase.from("travel_dna_profiles").update({
+        travel_persona: travelPersona,
+        budget_persona: budgetPersona,
+        last_updated: new Date().toISOString()
+      }).eq("id", profileId);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("Failed submitting drip response:", err);
+    return { success: false, error: err };
+  }
+}
+
