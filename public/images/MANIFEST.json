@@ -1,0 +1,53 @@
+{
+  "cities": {
+    "c1000000-0000-0000-0000-000000000001": {
+      "name": "Singapore",
+      "images": {
+        "hero": "/images/cities/c1000000-0000-0000-0000-000000000001-hero.jpg",
+        "thumb": "/images/cities/c1000000-0000-0000-0000-000000000001-thumb.jpg"
+      }
+    }
+  },
+  "experiences": {
+    "e0000000-0000-0000-0000-000000000001": {
+      "name": "Universal Studios Singapore",
+      "category": "Theme Parks",
+      "images": {
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000001-card.jpg",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000001-feature.jpg"
+      }
+    },
+    "e0000000-0000-0000-0000-000000000002": {
+      "name": "Beach Clubs (Sentosa)",
+      "category": "Beaches",
+      "images": {
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000002-card.jpg",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000002-feature.jpg"
+      }
+    },
+    "e0000000-0000-0000-0000-000000000003": {
+      "name": "Marina Bay Sands",
+      "category": "Luxury Hotels",
+      "images": {
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000003-card.jpg",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000003-feature.jpg"
+      }
+    },
+    "e0000000-0000-0000-0000-000000000004": {
+      "name": "Gardens by the Bay",
+      "category": "Nature",
+      "images": {
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000004-card.jpg",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000004-feature.jpg"
+      }
+    },
+    "e0000000-0000-0000-0000-000000000005": {
+      "name": "Orchard Road Shopping",
+      "category": "Shopping Malls",
+      "images": {
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000005-card.jpg",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000005-feature.jpg"
+      }
+    }
+  }
+}

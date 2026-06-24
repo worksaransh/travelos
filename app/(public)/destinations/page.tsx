@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getDestinations, City, Country } from "@/lib/supabase";
 
+import imageManifest from "@/public/images/MANIFEST.json";
+
 export default function DestinationsPage() {
   const [data, setData] = useState<{ countries: Country[]; cities: City[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +39,10 @@ export default function DestinationsPage() {
             {data?.cities.map((city) => {
               const country = data.countries.find((c) => c.id === city.country_id);
               const slug = city.name.toLowerCase();
+              
+              // Get image path from manifest
+              const manifestCity = (imageManifest.cities as any)[city.id];
+              const imagePath = manifestCity?.images?.thumb || "/images/placeholder-thumb.jpg";
 
               return (
                 <div
@@ -47,6 +53,15 @@ export default function DestinationsPage() {
                     boxShadow: "var(--theme-shadow)",
                   }}
                 >
+                  {/* Thumbnail Image */}
+                  <div className="relative w-full h-48 overflow-hidden bg-sand/20">
+                    <img 
+                      src={imagePath} 
+                      alt={city.name} 
+                      className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+
                   <div className="p-6 flex flex-col gap-4">
                     <div className="flex flex-col gap-1">
                       <span className="text-xs font-semibold text-clay-rose uppercase tracking-widest font-mono">

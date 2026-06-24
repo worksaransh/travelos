@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getDestinationBySlug, City, Country, HotelCategory } from "@/lib/supabase";
 
+import imageManifest from "@/public/images/MANIFEST.json";
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
@@ -49,6 +51,10 @@ export default function DestinationDetailPage({ params }: Props) {
     );
   }
 
+  // Get image path from manifest
+  const manifestCity = (imageManifest.cities as any)[city.id];
+  const imagePath = manifestCity?.images?.hero || "/images/placeholder-hero.jpg";
+
   return (
     <div className="flex flex-col min-h-screen p-8 bg-sand">
       <main className="max-w-4xl mx-auto w-full flex flex-col gap-8">
@@ -58,6 +64,16 @@ export default function DestinationDetailPage({ params }: Props) {
           </Link>
           <span>/</span>
           <span className="text-ink-indigo font-bold">{city.name}</span>
+        </div>
+
+        {/* Hero Banner Image */}
+        <div className="relative w-full h-[350px] overflow-hidden rounded-3xl border border-border/20 shadow-sm bg-sand/20">
+          <img 
+            src={imagePath} 
+            alt={city.name} 
+            className="object-cover w-full h-full"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
         </div>
 
         {/* Destination Header card */}
