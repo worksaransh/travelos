@@ -80,7 +80,7 @@ export default function DestinationsPage() {
                         <span className="font-bold">Currency:</span> {country?.currency || "Local"}
                       </div>
                       <div>
-                        <span className="font-bold">Best Months:</span> {city.weather_profile_json.best_months.join(", ")}
+                        <span className="font-bold">Weather:</span> {city.weather_profile_json?.profile || "Tropical"}
                       </div>
                       <div>
                         <span className="font-bold">Cost Index:</span> {city.avg_cost_index} / 100

@@ -109,10 +109,7 @@ export default function DestinationDetailPage({ params }: Props) {
               <h3 className="text-lg font-display font-bold text-ink-indigo">Travel Profile</h3>
               <div className="flex flex-col gap-3 text-sm text-deep-charcoal leading-relaxed bg-sand/30 p-4 rounded-xl font-mono">
                 <div>
-                  <strong>Weather Type:</strong> {city.weather_profile_json.profile}
-                </div>
-                <div>
-                  <strong>Best Months:</strong> {city.weather_profile_json.best_months.join(", ")}
+                  <strong>Weather Details:</strong> {city.weather_profile_json?.profile || "Tropical"}
                 </div>
                 <div>
                   <strong>Visa policy:</strong> {country?.visa_policy_default}
