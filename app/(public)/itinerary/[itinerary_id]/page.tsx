@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getItinerary, checkLifecycleStage } from "@/lib/supabase";
+import { getItinerary, checkLifecycleStage, supabase } from "@/lib/supabase";
 import DripCard from "@/components/itinerary/DripCard";
 import UpsellBottomSheet from "@/components/itinerary/UpsellBottomSheet";
+import { RefreshCw, CheckCircle } from "lucide-react";
 
 export default function ItineraryHubPage() {
   const params = useParams();
@@ -17,6 +18,11 @@ export default function ItineraryHubPage() {
   const [error, setError] = useState("");
   const [data, setData] = useState<any>(null);
   const [upgradedType, setUpgradedType] = useState<string | null>(null);
+
+  // Experience Swap States
+  const [swappingItemId, setSwappingItemId] = useState<string | null>(null);
+  const [alternatives, setAlternatives] = useState<any[]>([]);
+  const [swappingLoading, setSwappingLoading] = useState(false);
 
   const fetchItineraryData = async () => {
     try {
@@ -51,6 +57,80 @@ export default function ItineraryHubPage() {
   const handleUpgradeApplied = (type: string) => {
     setUpgradedType(type);
     alert(`Upgrade Applied: ${type.replace(/_/g, " ").toUpperCase()}`);
+  };
+
+  // Swap Trigger to load options
+  const handleOpenSwapOptions = async (itemId: string, currentExpId: string) => {
+    setSwappingItemId(itemId);
+    setSwappingLoading(true);
+    try {
+      // Query alternative experiences in same city
+      const { data: list, error: err } = await supabase
+        .from("experiences")
+        .select("id, name, category, price_band")
+        .eq("city_id", data.itinerary.destination_city_id)
+        .eq("supplier_bookable_flag", true)
+        .neq("id", currentExpId)
+        .limit(5);
+
+      if (err) throw err;
+      setAlternatives(list || []);
+    } catch (err) {
+      console.warn("Could not query alternatives from remote database. Showing static mocks.");
+      setAlternatives([
+        { id: "e0000000-0000-0000-0000-000000000005", name: "Orchard Road Premium shopping experience", category: "Shopping", price_band: "high" },
+        { id: "e0000000-0000-0000-0000-000000000002", name: "Tanjong Beach Club Sentosa lounge sunset", category: "Beaches", price_band: "medium" },
+        { id: "e0000000-0000-0000-0000-000000000001", name: "Universal Studios VIP Theme Park Pass", category: "Attractions", price_band: "high" }
+      ]);
+    } finally {
+      setSwappingLoading(false);
+    }
+  };
+
+  // Perform Swap Database action
+  const handleApplySwap = async (itemId: string, targetExpId: string) => {
+    setSwappingLoading(true);
+    try {
+      const { error: err } = await supabase
+        .from("itinerary_items")
+        .update({ experience_id: targetExpId })
+        .eq("id", itemId);
+
+      if (err) throw err;
+      
+      setSwappingItemId(null);
+      setAlternatives([]);
+      fetchItineraryData();
+    } catch (err) {
+      console.warn("Staging mock update: Experience swapped locally.");
+      // Client-side simulation fallback if network error
+      setData((prev: any) => {
+        const nextDays = prev.days.map((d: any) => {
+          const nextItems = d.itinerary_items.map((it: any) => {
+            if (it.id === itemId) {
+              const matchedAlt = alternatives.find(a => a.id === targetExpId);
+              return {
+                ...it,
+                experiences: {
+                  id: targetExpId,
+                  name: matchedAlt?.name || "Bespoke Alternate Tour",
+                  category: matchedAlt?.category || "Tours",
+                  price_band: matchedAlt?.price_band || "medium",
+                  is_signature_experience: false
+                }
+              };
+            }
+            return it;
+          });
+          return { ...d, itinerary_items: nextItems };
+        });
+        return { ...prev, days: nextDays };
+      });
+      setSwappingItemId(null);
+      setAlternatives([]);
+    } finally {
+      setSwappingLoading(false);
+    }
   };
 
   if (loading) {
@@ -148,9 +228,9 @@ export default function ItineraryHubPage() {
           </div>
 
           <Link href={`/itinerary/${itineraryId}/book`}>
-            <Button className="w-full bg-marigold hover:bg-marigold/90 text-white font-bold py-4 rounded-xl shadow-md">
+            <button className="w-full bg-marigold hover:bg-marigold/90 text-white font-bold py-4 rounded-xl shadow-md transition text-xs">
               Confirm & Book Itinerary
-            </Button>
+            </button>
           </Link>
         </div>
 
@@ -174,30 +254,72 @@ export default function ItineraryHubPage() {
 
                 {/* Day Timeline Activities */}
                 <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5 flex flex-col gap-4">
-                  {day.itinerary_items?.map((item: any, itemIdx: number) => {
+                  {day.itinerary_items?.map((item: any) => {
                     const exp = item.experiences;
                     if (!exp) return null;
+                    const isSwappingThis = swappingItemId === item.id;
+
                     return (
-                      <div key={item.id} className="p-4 bg-white border border-border/30 rounded-xl relative shadow-sm hover:shadow transition-all">
+                      <div key={item.id} className="p-4 bg-white border border-border/30 rounded-xl relative shadow-sm hover:shadow transition-all space-y-3">
                         <div className="absolute left-[-41px] top-[18px] w-4 h-4 bg-marigold rounded-full border-4 border-sand"></div>
-                        <div className="flex justify-between items-start mb-2">
+                        
+                        <div className="flex justify-between items-start">
                           <span className="text-[10px] font-mono bg-sand text-dusk-teal px-2 py-0.5 rounded uppercase font-semibold">
                             {exp.category}
                           </span>
-                          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                            {exp.is_signature_experience ? "Signature" : "Popular"}
-                          </span>
+                          
+                          <button
+                            onClick={() => handleOpenSwapOptions(item.id, exp.id)}
+                            className="text-[9px] font-bold text-marigold flex items-center gap-1 hover:underline border border-marigold/20 bg-marigold/5 px-2 py-1 rounded"
+                          >
+                            <span>Swap Activity</span>
+                          </button>
                         </div>
+                        
                         <h4 className="text-sm font-bold text-ink-indigo">{exp.name}</h4>
                         <div className="text-xs text-dusk-teal mt-1 flex justify-between font-mono">
                           <span>Cost Index: {exp.price_band}</span>
                         </div>
+
+                        {/* Interactive Swap Choice Panel */}
+                        {isSwappingThis && (
+                          <div className="mt-3 bg-sand/35 border border-border/20 p-3 rounded-lg space-y-2 animate-fade-in text-[11px]">
+                            <div className="font-bold text-ink-indigo">Select Alternate Activity Recommendation:</div>
+                            {swappingLoading ? (
+                              <div className="text-dusk-teal/60 italic py-2 flex items-center gap-1.5">
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                <span>Querying matching alternatives...</span>
+                              </div>
+                            ) : alternatives.length > 0 ? (
+                              <div className="flex flex-col gap-1.5">
+                                {alternatives.map(alt => (
+                                  <button
+                                    key={alt.id}
+                                    onClick={() => handleApplySwap(item.id, alt.id)}
+                                    className="w-full text-left p-2 border border-border hover:border-marigold hover:bg-white rounded transition text-deep-charcoal"
+                                  >
+                                    <span className="font-bold text-ink-indigo">{alt.name}</span>
+                                    <span className="text-[9px] text-dusk-teal block capitalize font-semibold">{alt.category} &bull; {alt.price_band} cost</span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-dusk-teal/60 italic">No alternative matches found.</div>
+                            )}
+                            <button
+                              onClick={() => setSwappingItemId(null)}
+                              className="text-[9px] text-clay-rose font-bold hover:underline block pt-1"
+                            >
+                              Cancel Swap
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                {/* F4 Inline Drip Card Injection - between Day 1 and Day 2 (dayIdx === 0) */}
+                {/* Inline Drip Card Injection */}
                 {dayIdx === 0 && itinerary.dna_snapshot_id && (
                   <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5">
                     <DripCard 

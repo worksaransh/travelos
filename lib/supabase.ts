@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { validateAIItinerary } from "./ai/validator";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3RpbmciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNDY4ODAwMCwiZXhwIjoyMDQwMjY0MDAwfQ.dummy-anon-key";
@@ -748,19 +749,66 @@ export async function generateItineraryForProfile(
 
     const itineraryId = newItinerary.id;
 
-    const { data: experiences } = await supabase
-      .from("experiences")
-      .select("id")
-      .eq("supplier_bookable_flag", true);
+    // 1. Proximity matching based on Travel DNA slider scores (Task 23)
+    let expIds: string[] = [];
+    try {
+      // Query experiences in target city that are supplier bookable
+      const { data: dbExperiences } = await supabase
+        .from("experiences")
+        .select(`
+          id,
+          name,
+          category,
+          price_band,
+          experience_dimension_tags (
+            weight,
+            dimension_tag_id
+          )
+        `)
+        .eq("city_id", cityId)
+        .eq("supplier_bookable_flag", true);
 
-    const expIds = experiences?.map((e) => e.id) || [
-      "e0000000-0000-0000-0000-000000000004", // Gardens by the Bay
-      "e0000000-0000-0000-0000-000000000003", // Marina Bay Sands
-      "e0000000-0000-0000-0000-000000000001", // USS
-      "e0000000-0000-0000-0000-000000000005", // Orchard Road Shopping
-      "e0000000-0000-0000-0000-000000000002"  // Beach Clubs
-    ];
+      // Query dimension tags to match IDs to names
+      const { data: dimTags } = await supabase
+        .from("dimension_tags")
+        .select("id, dimension_name");
 
+      const tagIdMap: Record<string, string> = {};
+      dimTags?.forEach((t) => {
+        tagIdMap[t.id] = t.dimension_name;
+      });
+
+      // Compute dot-product match score: Sum(slider * tag_weight)
+      const ranked = (dbExperiences || []).map((exp: any) => {
+        let score = 0;
+        exp.experience_dimension_tags?.forEach((link: any) => {
+          const dimName = tagIdMap[link.dimension_tag_id];
+          if (dimName && sliders[dimName]) {
+            score += Number(link.weight || 0) * sliders[dimName];
+          }
+        });
+        return { id: exp.id, score };
+      }).sort((a, b) => b.score - a.score);
+
+      if (ranked.length > 0) {
+        expIds = ranked.map((r) => r.id);
+      }
+    } catch (err) {
+      console.warn("Failed calculating proximity match scores, using fallbacks:", err);
+    }
+
+    // Default fallbacks if database matches are empty
+    if (expIds.length === 0) {
+      expIds = [
+        "e0000000-0000-0000-0000-000000000004", // Gardens by the Bay
+        "e0000000-0000-0000-0000-000000000003", // Marina Bay Sands
+        "e0000000-0000-0000-0000-000000000001", // USS
+        "e0000000-0000-0000-0000-000000000005", // Orchard Road Shopping
+        "e0000000-0000-0000-0000-000000000002"  // Beach Clubs
+      ];
+    }
+
+    // 2. Generate days and items
     for (let dayNum = 1; dayNum <= durationDays; dayNum++) {
       const { data: dayData, error: dayError } = await supabase
         .from("itinerary_days")
@@ -791,6 +839,42 @@ export async function generateItineraryForProfile(
           upsell_flag: false
         });
       }
+    }
+
+    // 3. AI Validation Check on generated plan payload (Task 22)
+    try {
+      const validationDays = [];
+      for (let d = 1; d <= durationDays; d++) {
+        const pIdx = (d - 1) % expIds.length;
+        const sIdx = (d) % expIds.length;
+        validationDays.push({
+          day: d,
+          experienceIds: d % 2 === 1 ? [expIds[pIdx], expIds[sIdx]] : [expIds[pIdx]],
+          highlights: `Dynamic exploration day matching travel preferences.`
+        });
+      }
+
+      const valPayload = {
+        itineraryName: `${answers.destinationSlug || "Singapore"} Tailored Signature Plan`,
+        destinationCity: answers.destinationSlug || "Singapore",
+        packageTier: budgetPersona === "Flexible" ? "premium" : "comfort",
+        estimatedCost: budgetVal,
+        days: validationDays
+      };
+
+      const report = await validateAIItinerary(JSON.stringify(valPayload));
+      
+      // Auto-flag low-confidence itineraries for admin review queue
+      if (!report.isValid || report.humanReviewRequired || report.autoReject) {
+        await supabase.from("content_approval_queue").insert({
+          entity_type: "itinerary",
+          entity_id: itineraryId,
+          status: "pending",
+          notes: `AUTO-FLAGGED: Validation score is ${report.confidenceScore}%. Errors: ${report.errors.join(", ")}`
+        });
+      }
+    } catch (valErr) {
+      console.warn("AI Itinerary validation pipeline execution warning:", valErr);
     }
 
     return { itineraryId };

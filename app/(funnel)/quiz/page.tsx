@@ -220,7 +220,19 @@ function QuizContent() {
                   {(["solo", "couple", "family", "group"] as const).map((t) => (
                     <button
                       key={t}
-                      onClick={() => setAnswers(prev => ({ ...prev, groupType: t }))}
+                      onClick={() => {
+                        const defaultOccasions = {
+                          solo: "Leisure",
+                          couple: "Honeymoon",
+                          family: "Family Vacation",
+                          group: "Leisure"
+                        };
+                        setAnswers(prev => ({
+                          ...prev,
+                          groupType: t,
+                          occasion: defaultOccasions[t]
+                        }));
+                      }}
                       className={`p-4 rounded-xl border text-sm capitalize font-medium transition-all ${
                         answers.groupType === t
                           ? "border-marigold bg-marigold/10 text-marigold"
@@ -276,19 +288,30 @@ function QuizContent() {
                   What is the occasion?
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {["Honeymoon", "Anniversary", "Birthday", "Family Vacation", "Business", "Leisure"].map((occ) => (
-                    <button
-                      key={occ}
-                      onClick={() => setAnswers(prev => ({ ...prev, occasion: occ }))}
-                      className={`p-4 rounded-xl border text-sm transition-all ${
-                        answers.occasion === occ
-                          ? "border-marigold bg-marigold/10 text-marigold"
-                          : "border-border/60 hover:border-marigold"
-                      }`}
-                    >
-                      {occ}
-                    </button>
-                  ))}
+                  {(
+                    answers.groupType === "solo"
+                      ? ["Birthday", "Business", "Leisure", "Solo Adventure"]
+                      : answers.groupType === "couple"
+                      ? ["Honeymoon", "Anniversary", "Birthday", "Leisure", "Romantic Escapade"]
+                      : answers.groupType === "family"
+                      ? ["Family Vacation", "Birthday", "Leisure", "Kid's Celebration"]
+                      : ["Birthday", "Group Retreat", "Business", "Leisure", "Reunion"]
+                  ).map((occ) => {
+                    const isSelected = answers.occasion === occ;
+                    return (
+                      <button
+                        key={occ}
+                        onClick={() => setAnswers(prev => ({ ...prev, occasion: occ }))}
+                        className={`p-4 rounded-xl border text-sm transition-all ${
+                          isSelected
+                            ? "border-marigold bg-marigold/10 text-marigold"
+                            : "border-border/60 hover:border-marigold"
+                        }`}
+                      >
+                        {occ}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -391,12 +414,35 @@ function QuizContent() {
                 Back
               </Button>
               {activeQuestion < 4 ? (
-                <Button
-                  onClick={() => setActiveQuestion(prev => prev + 1)}
-                  className="bg-ink-indigo text-white px-6"
+                <button
+                  onClick={async () => {
+                    setActiveQuestion(prev => prev + 1);
+                    try {
+                      const anonUid = await anonymousSignUp();
+                      const profId = await ensureUserAndProfile(anonUid);
+                      setUserId(anonUid);
+                      setProfileId(profId);
+                      
+                      if (activeQuestion === 0) {
+                        await submitQuestionnaireResponse(profId, 0, "destination_slug", answers.destinationSlug);
+                      } else if (activeQuestion === 1) {
+                        await submitQuestionnaireResponse(profId, 0, "group_type", answers.groupType);
+                        if (answers.groupType === "family") {
+                          await submitQuestionnaireResponse(profId, 0, "child_ages", answers.childAges);
+                        }
+                      } else if (activeQuestion === 2) {
+                        await submitQuestionnaireResponse(profId, 0, "occasion", answers.occasion);
+                      } else if (activeQuestion === 3) {
+                        await submitQuestionnaireResponse(profId, 0, "duration_days", answers.durationDays);
+                      }
+                    } catch (err) {
+                      console.warn("Auto-save intermediate answers failed:", err);
+                    }
+                  }}
+                  className="bg-ink-indigo hover:bg-ink-indigo/90 text-white px-6 py-2 rounded-lg font-semibold text-xs transition"
                 >
                   Next
-                </Button>
+                </button>
               ) : (
                 <Button
                   onClick={handleTier0Submit}

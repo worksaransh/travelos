@@ -24,6 +24,9 @@ export default function DestinationDetailPage({ params }: Props) {
     getDestinationBySlug(slug).then((res) => {
       setData(res);
       setLoading(false);
+      if (res?.city) {
+        document.title = `${res.city.name} Travel Packages & DNA Customizer | Journey OS`;
+      }
     });
   }, [slug]);
 
@@ -58,13 +61,17 @@ export default function DestinationDetailPage({ params }: Props) {
   return (
     <div className="flex flex-col min-h-screen p-8 bg-sand">
       <main className="max-w-4xl mx-auto w-full flex flex-col gap-8">
-        <div className="flex items-center gap-2 text-xs text-dusk-teal font-mono">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-dusk-teal font-mono">
+          <Link href="/" className="hover:underline">
+            Home
+          </Link>
+          <span>/</span>
           <Link href="/destinations" className="hover:underline">
             Destinations
           </Link>
           <span>/</span>
-          <span className="text-ink-indigo font-bold">{city.name}</span>
-        </div>
+          <span className="text-ink-indigo font-bold" aria-current="page">{city.name}</span>
+        </nav>
 
         {/* Hero Banner Image */}
         <div className="relative w-full h-[350px] overflow-hidden rounded-3xl border border-border/20 shadow-sm bg-sand/20">
