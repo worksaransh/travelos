@@ -14,7 +14,7 @@ export default function Homepage() {
             Introducing Journey OS
           </span>
           <h1 className="text-5xl sm:text-6xl font-display font-bold text-ink-indigo tracking-tight leading-none">
-            Your Travel DNA. <span className="italic text-marigold">Decoded.</span>
+            Your Travel Preferences. <span className="italic text-marigold">Decoded.</span>
           </h1>
           <p className="text-lg text-dusk-teal leading-relaxed max-w-2xl">
             We plan your flights, match your stays, and handpick local experiences by mapping your subconscious tastes into a bespoke signature travel profile.
@@ -22,7 +22,7 @@ export default function Homepage() {
           <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full sm:w-auto justify-center">
             <Link href="/quiz">
               <Button className="w-full sm:w-auto bg-marigold hover:bg-marigold/90 text-white font-semibold py-6 px-8 rounded-lg shadow-md transition-all duration-200 text-base">
-                Discover Your Travel DNA
+                Discover Your Trip Style
               </Button>
             </Link>
             <Link href="/destinations">

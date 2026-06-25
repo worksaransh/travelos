@@ -1,0 +1,36 @@
+question_id,tier,question_text,type,options,condition_field,condition_op,condition_value,next_question_if_condition_true,next_question_default
+T0_Q1,0,Where would you like to travel?,single_select,Not Sure Yet|I Know My Destination,,,,,T0_Q3
+T0_Q2,0,Which destination?,destination_autocomplete,,T0_Q1,equals,I Know My Destination,T0_Q3,
+T0_Q3,0,Domestic or International?,single_select,Domestic|International,,,,,T0_Q4
+T0_Q4,0,Departure City,city_autocomplete,,,,,,T0_Q5
+T0_Q5,0,Travel Month + Flexible Dates?,month_picker_plus_toggle,,,,,,T0_Q6
+T0_Q6,0,Trip Duration (nights),number,,,,,,T0_Q7
+T0_Q7,0,How many travelers? (adults/children split),number_split,,,,,,T0_Q8
+T0_Q8,0,Who are you traveling with?,single_select,Solo|Couple|Family|Friends|Corporate Group,,,,,T0_Q8A
+T0_Q8A,0,Child ages (if Family selected),multi_number,,T0_Q8,equals,Family,T0_Q9,T0_Q9
+T0_Q9,0,Total Budget,single_select,"Under ₹50,000|₹50,000-₹1,00,000|₹1,00,000-₹2,00,000|₹2,00,000-₹5,00,000|₹5,00,000+",,,,,T0_Q9A
+T0_Q9A,0,Per Person or Total Trip?,single_select,Per Person|Total Trip,,,,,T0_Q10
+T0_Q10,0,Preferred Hotel Category,single_select,Budget|3 Star|4 Star|5 Star|Luxury,,,,,T0_Q11
+T0_Q11,0,"Quick Vibe Check: Luxury, Adventure, Relaxation (1-10 each)",slider_set,,,,,,TEASER
+T1_Q1_SOLO,1,Trip Occasion (Solo),single_select,Vacation|Adventure|Religious|Birthday|Relaxation,T0_Q8,equals,Solo,T1_Q2,
+T1_Q1_COUPLE,1,Trip Occasion (Couple),single_select,Vacation|Honeymoon|Anniversary|Adventure|Birthday|Relaxation|Religious,T0_Q8,equals,Couple,T1_Q2,
+T1_Q1_FAMILY,1,Trip Occasion (Family),single_select,Family Holiday|Vacation|Religious|Birthday|Relaxation,T0_Q8,equals,Family,T1_Q2,
+T1_Q1_FRIENDS,1,Trip Occasion (Friends),single_select,Vacation|Adventure|Birthday|Relaxation|Religious,T0_Q8,equals,Friends,T1_Q2,
+T1_Q1_CORPORATE,1,Trip Occasion (Corporate),single_select,Business,T0_Q8,equals,Corporate Group,T1_Q2,
+T1_Q2,1,"Remaining Personality Sliders: Shopping, Food, Nature, Nightlife, Culture, Photography, Local Experiences (1-10 each)",slider_set,,,,,,GATE1
+GATE1,5,Create your free account to save your results,account_creation_form,Phone (WhatsApp)|Name,,,,,PACKAGE_RESULTS
+T2_Q1_INTL,2,Maximum Flight Duration,single_select,Under 3 Hours|Under 6 Hours|Under 10 Hours|Any Duration,T0_Q3,equals,International,T2_Q2_INTL,T2_Q5
+T2_Q2_INTL,2,Comfortable With Layovers?,single_select,Yes|No,T0_Q3,equals,International,T2_Q3_INTL,T2_Q5
+T2_Q3_INTL,2,Visa Preference,single_select,Visa Free|Easy Visa/VOA|Any Visa,T0_Q3,equals,International,T2_Q5,T2_Q5
+T2_Q5,2,Preferred Weather,single_select,Cold|Moderate|Warm|Tropical,,,,,T2_Q6
+T2_Q6,2,Choose Your Dream Experiences (multi-select),multi_select,Theme Parks|Cruises|Beaches|Luxury Hotels|Wildlife|Trekking|Shopping Malls|Fine Dining|Water Sports|Nightlife|Road Trips|Museums|Festivals|Local Markets,,,,,T2_Q7
+T2_Q7,2,What would disappoint you? (hard exclusion filter),multi_select,Crowds|Long Travel Time|Expensive Activities|Poor Hotels|Too Much Walking,,,,,T2_Q8
+T2_Q8,2,Dietary Needs,multi_select,Veg|Jain|Halal|Vegan|Allergies (specify),,,,,T2_Q9
+T2_Q9,2,Pace Preference,slider,Packed|Relaxed,,,,,T2_Q10
+T2_Q10,2,A Past Trip You Loved,free_text,,,,,,
+T3_HIDDEN_GEMS,3,Want exclusive local hidden gems?,upsell_bottom_sheet,Yes|No,,,,,
+T3_HOTEL_UPGRADE,3,Upgrade for a better hotel?,upsell_bottom_sheet,Yes|Maybe|No,upsell_score,gte,40,,
+T3_PREMIUM_EXP,3,Upgrade for premium experiences?,upsell_bottom_sheet,Yes|Maybe|No,upsell_score,gte,50,,
+T3_EXTRA_DAY,3,Add a day if it improves the experience?,upsell_bottom_sheet,Yes|Maybe|No,upsell_score,gte,65,,
+T4_DYNAMIC,4,"Destination-specific signature experience cards (auto-generated from is_signature_experience=TRUE for the locked city, NOT static per-destination questions)",dynamic_card_set,,,,,,GATE2
+GATE2,5,Complete your details (consent required),lead_capture_form,Name|Email|Preferred Contact Time|DPDP Consent Checkbox,,,,,BOOKING_INTENT

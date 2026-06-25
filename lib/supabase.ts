@@ -706,6 +706,31 @@ export async function generateItineraryForProfile(
     const durationDays = Number(answers.durationDays) || 5;
     const budgetVal = Number(answers.budgetValue) || 120000;
 
+    // Find a matching active package to snapshot
+    const tierNormalized = (budgetPersona === "Flexible" ? "premium" : "comfort").toLowerCase();
+    const { data: pkg } = await supabase
+      .from("packages")
+      .select("id")
+      .eq("destination_city_id", cityId)
+      .eq("package_tier", tierNormalized)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    let packageVersionId: string | null = null;
+    if (pkg?.id) {
+      try {
+        const { data: snapshotId, error: snapshotErr } = await supabase.rpc("create_package_snapshot", {
+          p_package_id: pkg.id
+        });
+        if (!snapshotErr && snapshotId) {
+          packageVersionId = snapshotId;
+        }
+      } catch (err) {
+        console.warn("Failed to create package version snapshot:", err);
+      }
+    }
+
     const { data: newItinerary, error: itError } = await supabase
       .from("itineraries")
       .insert({
@@ -714,7 +739,8 @@ export async function generateItineraryForProfile(
         destination_city_id: cityId,
         status: "active",
         package_tier: budgetPersona === "Flexible" ? "Premium" : "Comfort",
-        total_price_estimate: budgetVal
+        total_price_estimate: budgetVal,
+        package_version_id: packageVersionId
       })
       .select("id")
       .single();

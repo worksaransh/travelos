@@ -92,7 +92,7 @@ export default function DestinationDetailPage({ params }: Props) {
               Curating {city.name}
             </h1>
             <p className="text-dusk-teal text-sm leading-relaxed max-w-2xl">
-              Decode the weather profile, visa policy, and hotel rates in {city.name} to customize your Travel DNA.
+              Decode the weather profile, visa policy, and hotel rates in {city.name} to customize your Travel Preferences.
             </p>
           </div>
 
@@ -154,7 +154,7 @@ export default function DestinationDetailPage({ params }: Props) {
 
           <div className="border-t border-border/40 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-xs text-dusk-teal max-w-sm">
-              Use this destination as a seed parameter for your Travel DNA quiz flow.
+              Use this destination as a seed parameter for your Travel Preferences quiz flow.
             </span>
             <Link href={`/quiz?destination=${slug}`} className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto bg-marigold hover:bg-marigold/90 text-white font-semibold py-5 px-8 rounded-lg shadow-md transition-all duration-200">

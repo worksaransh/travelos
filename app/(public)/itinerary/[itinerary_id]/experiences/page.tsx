@@ -107,7 +107,7 @@ export default function ExperienceDetailsGridPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {experiencesList.map((exp) => {
             const meta = expMetadata[exp.id] || {
-              desc: "A specially curated experience matching your Travel DNA scores & sliders.",
+              desc: "A specially curated experience matching your Travel Preferences scores & sliders.",
               duration: "Flexible",
               price: "Included"
             };

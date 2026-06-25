@@ -420,7 +420,7 @@ function QuizContent() {
           >
             <div className="flex flex-col gap-2">
               <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
-                Decoded Travel DNA
+                Decoded Travel Preferences
               </span>
               <h2 className="text-3xl font-display font-bold text-ink-indigo">
                 Analyzing Your Signature Match...
@@ -482,7 +482,7 @@ function QuizContent() {
                 Stage 2 (Tier 1)
               </span>
               <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                Sharpen Your Travel DNA
+                Sharpen Your Travel Preferences
               </h2>
               <p className="text-xs text-dusk-teal">
                 Drag the sliders to indicate which dimensions you prioritize for this trip.
