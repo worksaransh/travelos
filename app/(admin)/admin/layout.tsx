@@ -23,7 +23,8 @@ import {
   Menu,
   X,
   Bell,
-  User
+  User,
+  ClipboardList
 } from "lucide-react";
 
 interface SidebarItem {
@@ -47,6 +48,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "Users & Roles", href: "/admin/users-rbac", icon: ShieldCheck },
   { name: "SEO Manager", href: "/admin/seo", icon: Search },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+  { name: "Improvement Logs", href: "/admin/improvements", icon: ClipboardList },
   { name: "Audit Logs", href: "/admin/logs", icon: ScrollText },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
