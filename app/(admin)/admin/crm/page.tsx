@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+
+import { supabase, updateLeadStage } from "@/lib/supabase";
 import { decryptLeadData } from "@/lib/utils";
 import { Plus, Kanban as KanbanIcon, ListFilter, Phone, Mail, FileText, CheckSquare, ChevronRight, AlertTriangle } from "lucide-react";
 
@@ -46,10 +47,8 @@ export default function LeadCRMAdmin() {
 
       if (error) throw error;
 
-      // Map Supabase leads to stages (since Supabase table doesn't have an explicit 'stage' column, 
-      // we map it dynamically or keep it in client memory/metadata)
-      const formatted: Lead[] = (data || []).map((l: any, idx: number) => {
-        const stages: Lead["stage"][] = ["New", "Contacted", "Proposal", "Negotiating", "Booked"];
+      // Map Supabase leads to stages (reading the persistent database column)
+      const formatted: Lead[] = (data || []).map((l: any) => {
         const decryptedWhatsapp = decryptLeadData(l.whatsapp_number || "");
         const decryptedEmail = decryptLeadData(l.email || "");
         return {
@@ -61,7 +60,7 @@ export default function LeadCRMAdmin() {
           preferred_contact_time: l.preferred_contact_time || "Morning",
           consent_given: l.consent_given,
           created_at: l.created_at,
-          stage: stages[idx % stages.length], // distribute across mock stages for display
+          stage: l.stage || "New", // persistent DB column fallback to New
           value: l.capture_gate === "gate2_full" ? 5400 : 1800
         };
       });
@@ -141,12 +140,19 @@ export default function LeadCRMAdmin() {
     fetchLeads();
   }, []);
 
-  const moveLead = (leadId: string, newStage: Lead["stage"]) => {
+  const moveLead = async (leadId: string, newStage: Lead["stage"]) => {
+    // Update local state first
     setLeads(prev =>
       prev.map(l => (l.id === leadId ? { ...l, stage: newStage } : l))
     );
     if (selectedLead && selectedLead.id === leadId) {
       setSelectedLead(prev => (prev ? { ...prev, stage: newStage } : null));
+    }
+
+    try {
+      await updateLeadStage(leadId, newStage);
+    } catch (err) {
+      console.error("Failed to update lead status in DB:", err);
     }
   };
 

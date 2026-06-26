@@ -1,5 +1,12 @@
 import { z } from "zod";
+import crypto from "crypto";
 import { supabase } from "../supabase";
+
+const isDummyMode = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "dummy-anon-key";
+  return url.includes("127.0.0.1") || anonKey.includes("dummy-anon-key");
+};
 
 // Define the schema for structured itinerary generation
 export const ItinerarySchema = z.object({
@@ -29,6 +36,26 @@ export interface ValidationReport {
  * Validates generated AI itineraries against the Supabase database and business constraints.
  */
 export async function validateAIItinerary(responseJsonString: string): Promise<ValidationReport> {
+  const payloadHash = crypto.createHash("sha256").update(responseJsonString).digest("hex");
+
+  // Check cache first if not in dummy mode
+  if (!isDummyMode()) {
+    try {
+      const { data: cached, error: cacheErr } = await supabase
+        .from("validation_reports_cache")
+        .select("validation_report")
+        .eq("payload_hash", payloadHash)
+        .maybeSingle();
+
+      if (!cacheErr && cached?.validation_report) {
+        console.log("[VALIDATOR CACHE HIT] Returning cached report for hash:", payloadHash);
+        return cached.validation_report as unknown as ValidationReport;
+      }
+    } catch (err) {
+      console.warn("Failed checking validation reports cache:", err);
+    }
+  }
+
   const report: ValidationReport = {
     isValid: true,
     confidenceScore: 100,
@@ -37,6 +64,7 @@ export async function validateAIItinerary(responseJsonString: string): Promise<V
     errors: [],
     warnings: []
   };
+
 
   let parsedData: any = null;
 
@@ -152,6 +180,19 @@ export async function validateAIItinerary(responseJsonString: string): Promise<V
     report.isValid = false;
   } else if (report.confidenceScore < 85) {
     report.humanReviewRequired = true;
+  }
+
+  // Save to cache if not in dummy mode
+  if (!isDummyMode()) {
+    try {
+      await supabase.from("validation_reports_cache").insert({
+        payload_hash: payloadHash,
+        validation_report: report
+      });
+      console.log("[VALIDATOR CACHE WRITE] Cached report for hash:", payloadHash);
+    } catch (err) {
+      console.warn("Failed saving report to cache:", err);
+    }
   }
 
   return report;

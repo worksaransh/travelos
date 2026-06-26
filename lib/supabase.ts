@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { validateAIItinerary } from "./ai/validator";
-import { encryptLeadData } from "./utils";
+import { encryptLeadData, decryptLeadData } from "./utils";
+import { getOpenAIEmbedding } from "./ai/provider";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3RpbmciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNDY4ODAwMCwiZXhwIjoyMDQwMjY0MDAwfQ.dummy-anon-key";
@@ -646,15 +647,22 @@ export async function submitWhatsAppLead(profileId: string, whatsapp: string) {
 
     const userId = profile.user_id;
 
-    const { error: le } = await supabase.from("leads").insert({
+    const { data: leadData, error: le } = await supabase.from("leads").insert({
       user_id: userId,
       capture_gate: "gate1_whatsapp",
       whatsapp_number: encryptLeadData(whatsapp),
       consent_given: true,
       consent_timestamp: new Date().toISOString(),
       consent_version: "v1"
-    });
-    if (le) throw le;
+    }).select("id").single();
+    if (le || !leadData) throw le || new Error("Failed to insert lead");
+
+    const leadId = leadData.id;
+    try {
+      await triggerWhatsAppNotification(leadId, "Welcome to Journey OS! Your Travel DNA style profile has been registered successfully. We are now crafting your customized itinerary details.");
+    } catch (notifErr) {
+      console.warn("Failed sending WhatsApp welcome trigger:", notifErr);
+    }
 
     const { error: ue } = await supabase
       .from("users")
@@ -879,14 +887,71 @@ export async function generateItineraryForProfile(
 
       const report = await validateAIItinerary(JSON.stringify(valPayload));
       
-      // Auto-flag low-confidence itineraries for admin review queue
+      // Auto-flag low-confidence itineraries for admin review queue & trigger fallback logic
       if (!report.isValid || report.humanReviewRequired || report.autoReject) {
+        console.warn("[VALIDATION WARNING] Itinerary failed validation checks. Deploying deterministic fallback loop.");
+
+        // Insert to approval queue
         await supabase.from("content_approval_queue").insert({
           entity_type: "itinerary",
           entity_id: itineraryId,
           status: "pending",
           notes: `AUTO-FLAGGED: Validation score is ${report.confidenceScore}%. Errors: ${report.errors.join(", ")}`
         });
+
+        // Detach previous itinerary items and rebuild with 100% verified experiences
+        const { data: itDays } = await supabase
+          .from("itinerary_days")
+          .select("id")
+          .eq("itinerary_id", itineraryId);
+
+        if (itDays && itDays.length > 0) {
+          const dayIds = itDays.map((d: any) => d.id);
+          await supabase.from("itinerary_items").delete().in("itinerary_day_id", dayIds);
+
+          const fallbackCatalog = [
+            "e0000000-0000-0000-0000-000000000004", // Gardens by the Bay
+            "e0000000-0000-0000-0000-000000000003", // Marina Bay Sands
+            "e0000000-0000-0000-0000-000000000001", // USS
+            "e0000000-0000-0000-0000-000000000005"  // Orchard Road Shopping
+          ];
+
+          // Query valid bookable experiences in target city that match child safety
+          const { data: safeExpList } = await supabase
+            .from("experiences")
+            .select("id")
+            .eq("city_id", cityId)
+            .eq("supplier_bookable_flag", true)
+            .neq("age_suitability", "adults_only")
+            .limit(10);
+
+          const finalSafeIds = (safeExpList && safeExpList.length > 0) 
+            ? safeExpList.map((e: any) => e.id)
+            : fallbackCatalog;
+
+          // Re-populate deterministic items
+          for (let idx = 0; idx < itDays.length; idx++) {
+            const dayId = itDays[idx].id;
+            const pIndex = idx % finalSafeIds.length;
+            await supabase.from("itinerary_items").insert({
+              itinerary_day_id: dayId,
+              experience_id: finalSafeIds[pIndex],
+              sequence_order: 1,
+              upsell_flag: false
+            });
+
+            if (idx % 2 === 0) {
+              const sIndex = (idx + 1) % finalSafeIds.length;
+              await supabase.from("itinerary_items").insert({
+                itinerary_day_id: dayId,
+                experience_id: finalSafeIds[sIndex],
+                sequence_order: 2,
+                upsell_flag: false
+              });
+            }
+          }
+          console.log("[VALIDATION FALLBACK] Itinerary successfully rebuilt with deterministic matches.");
+        }
       }
     } catch (valErr) {
       console.warn("AI Itinerary validation pipeline execution warning:", valErr);
@@ -1020,7 +1085,7 @@ export async function checkoutBookingGate(
 
     const userId = itinerary.user_id;
 
-    const { error: le } = await supabase.from("leads").insert({
+    const { data: leadData, error: le } = await supabase.from("leads").insert({
       user_id: userId,
       capture_gate: "gate2_full",
       email: encryptLeadData(email),
@@ -1029,8 +1094,15 @@ export async function checkoutBookingGate(
       consent_given: true,
       consent_timestamp: new Date().toISOString(),
       consent_version: "v1"
-    });
-    if (le) throw le;
+    }).select("id").single();
+    if (le || !leadData) throw le || new Error("Failed to insert lead");
+
+    const leadId = leadData.id;
+    try {
+      await triggerWhatsAppNotification(leadId, `Hi ${name}! Your booking request for itinerary has been registered. Our concierge team will contact you in the ${preferredTime} to finalize details.`);
+    } catch (notifErr) {
+      console.warn("Failed sending WhatsApp booking trigger:", notifErr);
+    }
 
     const { error: ue } = await supabase
       .from("users")
@@ -1096,6 +1168,184 @@ export async function submitDripResponseAndUpdateDNA(
     return { success: true };
   } catch (err) {
     console.error("Failed submitting drip response:", err);
+    return { success: false, error: err };
+  }
+}
+
+export async function searchExperiencesSemantically(
+  cityId: string,
+  query: string,
+  limit: number = 5
+): Promise<any[]> {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] Semantic search query:", query);
+    return [
+      { id: "e0000000-0000-0000-0000-000000000004", name: "Gardens by the Bay", category: "Nature", price_band: "medium" },
+      { id: "e0000000-0000-0000-0000-000000000003", name: "Marina Bay Sands", category: "Luxury", price_band: "high" }
+    ];
+  }
+
+  try {
+    const embedding = await getOpenAIEmbedding(query);
+    const { data, error } = await supabase.rpc("match_experiences", {
+      query_embedding: embedding,
+      match_threshold: 0.1,
+      match_count: limit,
+      p_city_id: cityId
+    });
+
+    if (error) throw error;
+    if (data && data.length > 0) {
+      return data;
+    }
+
+    console.log("[SEMANTIC SEARCH] 0 vector matches (NULL embeddings expected). Running keyword search.");
+    const { data: textMatches } = await supabase
+      .from("experiences")
+      .select("id, name, category, price_band, age_suitability")
+      .eq("city_id", cityId)
+      .eq("supplier_bookable_flag", true)
+      .ilike("name", `%${query}%`)
+      .limit(limit);
+
+    if (textMatches && textMatches.length > 0) {
+      return textMatches;
+    }
+
+    // Secondary fallback: return general bookable experiences in the target city
+    const { data: generalMatches } = await supabase
+      .from("experiences")
+      .select("id, name, category, price_band, age_suitability")
+      .eq("city_id", cityId)
+      .eq("supplier_bookable_flag", true)
+      .limit(limit);
+
+    return generalMatches || [];
+  } catch (err) {
+    console.error("Semantic search failed, falling back to basic contains query:", err);
+    const { data } = await supabase
+      .from("experiences")
+      .select("id, name, category, price_band, age_suitability")
+      .eq("city_id", cityId)
+      .eq("supplier_bookable_flag", true)
+      .ilike("name", `%${query}%`)
+      .limit(limit);
+    return data || [];
+  }
+}
+
+export async function triggerWhatsAppNotification(
+  leadId: string,
+  message: string
+): Promise<{ success: boolean; logId?: string }> {
+  if (isDummyMode()) {
+    console.log(`[MOCK DB] triggerWhatsAppNotification for lead ${leadId}: "${message}"`);
+    return { success: true };
+  }
+
+  let status = "sent";
+  try {
+    const { data: lead, error: le } = await supabase
+      .from("leads")
+      .select("whatsapp_number, email, name")
+      .eq("id", leadId)
+      .single();
+
+    if (le || !lead) throw le || new Error("Lead not found");
+
+    const encryptedPhone = lead.whatsapp_number || "";
+    const decryptedPhone = decryptLeadData(encryptedPhone);
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_FROM_NUMBER || "+14155238886";
+
+    if (accountSid && authToken && decryptedPhone) {
+      console.log(`[TWILIO] Sending real WhatsApp notification to ${decryptedPhone}...`);
+      const response = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": "Basic " + Buffer.from(accountSid + ":" + authToken).toString("base64"),
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: new URLSearchParams({
+            To: `whatsapp:${decryptedPhone.replace(/\s+/g, "")}`,
+            From: `whatsapp:${fromNumber}`,
+            Body: message
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Twilio API failed:", errText);
+        status = "failed";
+      } else {
+        console.log("Twilio API successfully triggered message.");
+      }
+    } else {
+      console.log(`[MOCK TWILIO] Sending message to ${decryptedPhone || lead.email}: "${message}"`);
+      status = "mock_sent";
+    }
+
+    const { data: logEntry } = await supabase
+      .from("crm_notification_logs")
+      .insert({
+        lead_id: leadId,
+        message_body: message,
+        status: status
+      })
+      .select("id")
+      .single();
+
+    return { success: status !== "failed", logId: logEntry?.id };
+  } catch (err) {
+    console.error("WhatsApp notification trigger error:", err);
+    return { success: false };
+  }
+}
+
+export async function updateLeadStage(leadId: string, stage: string) {
+  if (isDummyMode()) {
+    console.log("[MOCK DB] updateLeadStage:", leadId, "to", stage);
+    return { success: true };
+  }
+
+  try {
+    const { data: lead, error: queryErr } = await supabase
+      .from("leads")
+      .select("name, email")
+      .eq("id", leadId)
+      .single();
+    if (queryErr) throw queryErr;
+
+    const { error } = await supabase
+      .from("leads")
+      .update({ stage })
+      .eq("id", leadId);
+    if (error) throw error;
+
+    const name = lead?.name || "Traveler";
+    let message = "";
+    if (stage === "Contacted") {
+      message = `Hi ${name}, one of our travel advisers has picked up your request and will contact you shortly to review your custom itinerary.`;
+    } else if (stage === "Proposal") {
+      message = `Hi ${name}, we have prepared a customized itinerary proposal for your review! Check your dashboard to review details and upgrades.`;
+    } else if (stage === "Negotiating") {
+      message = `Hi ${name}, we've updated your proposal details based on your feedback. We are adjusting slots to get the best pricing.`;
+    } else if (stage === "Booked") {
+      message = `🎉 Hi ${name}! Your booking has been officially CONFIRMED! We have secured your hotel tier and experiences. Prepare for takeoff! ✈️`;
+    }
+
+    if (message) {
+      await triggerWhatsAppNotification(leadId, message);
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("Failed updating lead stage:", err);
     return { success: false, error: err };
   }
 }

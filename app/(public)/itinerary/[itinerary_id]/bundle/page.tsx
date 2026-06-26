@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getItinerary, supabase } from "@/lib/supabase";
+import { getItinerary, supabase, searchExperiencesSemantically } from "@/lib/supabase";
 import { 
   MapPin, Hotel, Activity, Plus, CheckSquare, DollarSign, 
   ArrowRight, ArrowLeft, Check, Sparkles, Shield, Wifi, 
@@ -115,6 +115,8 @@ export default function BundleBuilderPage() {
   const [swappingItemId, setSwappingItemId] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<any[]>([]);
   const [swappingLoading, setSwappingLoading] = useState(false);
+  const [semanticSearchQuery, setSemanticSearchQuery] = useState("");
+  const [semanticLoading, setSemanticLoading] = useState(false);
 
   // Load Itinerary Details
   const fetchItineraryData = async () => {
@@ -160,6 +162,7 @@ export default function BundleBuilderPage() {
   // Query alternative experiences in same city
   const handleOpenSwapOptions = async (itemId: string, currentExpId: string) => {
     setSwappingItemId(itemId);
+    setSemanticSearchQuery("");
     setSwappingLoading(true);
     try {
       const { data: list, error: err } = await supabase
@@ -181,6 +184,19 @@ export default function BundleBuilderPage() {
       ]);
     } finally {
       setSwappingLoading(false);
+    }
+  };
+
+  const handleSemanticSearch = async (itemId: string, cityId: string) => {
+    if (!semanticSearchQuery.trim()) return;
+    setSemanticLoading(true);
+    try {
+      const results = await searchExperiencesSemantically(cityId, semanticSearchQuery, 5);
+      setAlternatives(results || []);
+    } catch (err) {
+      console.error("Semantic search failed:", err);
+    } finally {
+      setSemanticLoading(false);
     }
   };
 
@@ -515,11 +531,31 @@ export default function BundleBuilderPage() {
 
                               {/* Inline Swap Choice Panel */}
                               {isSwappingThis && (
-                                <div className="mt-3 bg-sand/35 border border-border/20 p-3 rounded-lg space-y-2 animate-fade-in text-[10px]">
+                                <div className="mt-3 bg-sand/35 border border-border/20 p-4 rounded-xl space-y-3.5 animate-fade-in text-[11px] text-left">
                                   <div className="font-bold text-ink-indigo">Select Alternate Curation:</div>
-                                  {swappingLoading ? (
+                                  
+                                  {/* AI Semantic Search Input */}
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Search by vibe (e.g. sunset cruise, street food)..."
+                                      value={semanticSearchQuery}
+                                      onChange={(e) => setSemanticSearchQuery(e.target.value)}
+                                      className="flex-1 px-3 py-1.5 border border-border/60 bg-white text-xs rounded-lg outline-none focus:border-marigold"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSemanticSearch(item.id, data.itinerary.destination_city_id)}
+                                      disabled={semanticLoading || !semanticSearchQuery.trim()}
+                                      className="bg-marigold hover:bg-marigold/90 text-white font-semibold px-3 py-1.5 rounded-lg text-[10px] transition shrink-0"
+                                    >
+                                      {semanticLoading ? "Searching..." : "Search"}
+                                    </button>
+                                  </div>
+
+                                  {swappingLoading || semanticLoading ? (
                                     <div className="text-dusk-teal/60 italic py-2 flex items-center gap-1.5">
-                                      <RefreshCw className="w-3 h-3 animate-spin" />
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                                       <span>Querying matching alternatives...</span>
                                     </div>
                                   ) : alternatives.length > 0 ? (
@@ -528,19 +564,19 @@ export default function BundleBuilderPage() {
                                         <button
                                           key={alt.id}
                                           onClick={() => handleApplySwap(item.id, alt.id)}
-                                          className="w-full text-left p-2 border border-border hover:border-marigold hover:bg-white rounded transition text-deep-charcoal"
+                                          className="w-full text-left p-2.5 border border-border hover:border-marigold hover:bg-white rounded-lg transition text-deep-charcoal bg-white"
                                         >
-                                          <span className="font-bold text-ink-indigo">{alt.name}</span>
-                                          <span className="text-[8px] text-dusk-teal block capitalize font-semibold">{alt.category} &bull; {alt.price_band} cost</span>
+                                          <span className="font-bold text-ink-indigo block leading-snug">{alt.name}</span>
+                                          <span className="text-[9px] text-dusk-teal block capitalize font-semibold mt-0.5">{alt.category} &bull; {alt.price_band} cost</span>
                                         </button>
                                       ))}
                                     </div>
                                   ) : (
-                                    <div className="text-dusk-teal/60 italic">No alternatives found.</div>
+                                    <div className="text-dusk-teal/60 italic">No alternative matches found.</div>
                                   )}
                                   <button
                                     onClick={() => setSwappingItemId(null)}
-                                    className="text-[8px] text-clay-rose font-bold hover:underline block pt-1"
+                                    className="text-[10px] text-clay-rose font-bold hover:underline block pt-1"
                                   >
                                     Cancel Swap
                                   </button>

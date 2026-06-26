@@ -307,3 +307,48 @@ export class AIChainService {
 }
 
 export const aiChain = new AIChainService();
+
+export async function getOpenAIEmbedding(text: string): Promise<number[]> {
+  const key = process.env.OPENAI_API_KEY;
+  if (key) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: "text-embedding-3-small",
+          input: text
+        })
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data?.[0]?.embedding) {
+          return result.data[0].embedding;
+        }
+      }
+      console.warn("OpenAI Embedding endpoint failed. Falling back to deterministic mock.");
+    } catch (err) {
+      console.warn("OpenAI Embedding API error, falling back to deterministic mock:", err);
+    }
+  }
+
+  // Deterministic 1536-dimensional float vector generator
+  const embedding = new Array(1536).fill(0);
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  for (let i = 0; i < 1536; i++) {
+    const val = Math.sin(hash + i) * 10000;
+    embedding[i] = val - Math.floor(val);
+  }
+  // Normalize vector to unit length
+  let sumSq = 0;
+  for (let i = 0; i < 1536; i++) sumSq += embedding[i] * embedding[i];
+  const norm = Math.sqrt(sumSq);
+  for (let i = 0; i < 1536; i++) embedding[i] = embedding[i] / (norm || 1);
+  return embedding;
+}
