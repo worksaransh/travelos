@@ -585,7 +585,7 @@ function QuizContent() {
                   <div key={dim} className="space-y-1.5 text-left">
                     <div className="flex justify-between text-xs font-semibold text-ink-indigo">
                       <span>{dim}</span>
-                      <span className="font-mono text-marigold">{sliders[dim] || 50}%</span>
+                      <span className="font-mono text-amber-800 font-bold">{sliders[dim] || 50}%</span>
                     </div>
                     <input
                       type="range"
@@ -636,7 +636,7 @@ function QuizContent() {
                 </div>
 
                 <div className="flex flex-col gap-2 text-left">
-                  <h4 className="text-[10px] font-bold uppercase text-marigold tracking-widest font-mono">
+                  <h4 className="text-[10px] font-bold uppercase text-amber-800 tracking-widest font-mono">
                     AI Recommended Experience Snaps:
                   </h4>
                   <div className="flex flex-col gap-2">

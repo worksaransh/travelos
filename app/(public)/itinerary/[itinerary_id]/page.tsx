@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getItinerary, checkLifecycleStage, supabase } from "@/lib/supabase";
+import { getItinerary, supabase } from "@/lib/supabase";
 import DripCard from "@/components/itinerary/DripCard";
 import UpsellBottomSheet from "@/components/itinerary/UpsellBottomSheet";
-import { RefreshCw, CheckCircle } from "lucide-react";
+import ItineraryRouteMap from "@/components/itinerary/ItineraryRouteMap";
+import { RefreshCw } from "lucide-react";
 
 export default function ItineraryHubPage() {
   const params = useParams();
@@ -19,10 +20,88 @@ export default function ItineraryHubPage() {
   const [data, setData] = useState<any>(null);
   const [upgradedType, setUpgradedType] = useState<string | null>(null);
 
+  // Active day tracker for map highlighting
+  const [activeDayIndex, setActiveDayIndex] = useState(0);
+
   // Experience Swap States
   const [swappingItemId, setSwappingItemId] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<any[]>([]);
   const [swappingLoading, setSwappingLoading] = useState(false);
+
+  // Voting State
+  const [votes, setVotes] = useState<Record<string, { upvotes: number; downvotes: number; userVote?: 'upvote' | 'downvote' }>>({});
+
+  const getVoterSessionId = () => {
+    if (typeof window === "undefined") return "server-session";
+    let sid = localStorage.getItem("voter_session_id");
+    if (!sid) {
+      sid = "session_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+      localStorage.setItem("voter_session_id", sid);
+    }
+    return sid;
+  };
+
+  const fetchVotes = async (itemIds: string[]) => {
+    try {
+      if (itemIds.length === 0) return;
+      
+      const { data: voteRows, error } = await supabase
+        .from("itinerary_item_votes")
+        .select("itinerary_item_id, vote_type, voter_session_id")
+        .in("itinerary_item_id", itemIds);
+         
+      if (error) throw error;
+      
+      const localSessionId = getVoterSessionId();
+      const newVotesMap: typeof votes = {};
+      
+      itemIds.forEach((itemId: string) => {
+        newVotesMap[itemId] = { upvotes: 0, downvotes: 0 };
+      });
+      
+      voteRows?.forEach((row: any) => {
+        if (!newVotesMap[row.itinerary_item_id]) {
+          newVotesMap[row.itinerary_item_id] = { upvotes: 0, downvotes: 0 };
+        }
+        if (row.vote_type === "upvote") {
+          newVotesMap[row.itinerary_item_id].upvotes++;
+        } else if (row.vote_type === "downvote") {
+          newVotesMap[row.itinerary_item_id].downvotes++;
+        }
+        if (row.voter_session_id === localSessionId) {
+          newVotesMap[row.itinerary_item_id].userVote = row.vote_type;
+        }
+      });
+      
+      setVotes(newVotesMap);
+    } catch (err) {
+      console.warn("Failed fetching votes:", err);
+    }
+  };
+
+  const castVote = async (itemId: string, voteType: 'upvote' | 'downvote') => {
+    try {
+      const sid = getVoterSessionId();
+      
+      // Enforce vote insertion. Unique constraint on (itinerary_item_id, voter_session_id)
+      const { error } = await supabase
+        .from("itinerary_item_votes")
+        .insert({
+          itinerary_item_id: itemId,
+          voter_session_id: sid,
+          vote_type: voteType
+        });
+        
+      if (error) throw error;
+      
+      // Re-fetch votes for items
+      const itemIds = data?.days?.flatMap((d: any) => d.itinerary_items?.map((it: any) => it.id) || []) || [];
+      fetchVotes(itemIds);
+    } catch (err: any) {
+      console.warn("Failed to cast vote:", err);
+      alert("You have already voted for this experience choice!");
+    }
+  };
 
   const fetchItineraryData = async () => {
     try {
@@ -30,16 +109,10 @@ export default function ItineraryHubPage() {
       const fetched = await getItinerary(itineraryId);
       setData(fetched);
 
-      // 2. Perform Funnel Gating
-      const profileId = fetched.itinerary.dna_snapshot_id;
-      if (profileId) {
-        const stage = await checkLifecycleStage(profileId);
-        if (stage === "lead") {
-          console.warn("User has not passed Gate 1. Redirecting to quiz.");
-          router.push("/quiz");
-          return;
-        }
-      }
+      // 2. Fetch Votes
+      const itemIds = fetched.days?.flatMap((d: any) => d.itinerary_items?.map((it: any) => it.id) || []) || [];
+      fetchVotes(itemIds);
+
       setLoading(false);
     } catch (err) {
       console.error("Failed loading itinerary:", err);
@@ -211,7 +284,7 @@ export default function ItineraryHubPage() {
                     ? "Marina Bay Sands Club Suite (5-Star Luxury)" 
                     : "Recommended Mid-tier Boutique Hotel (Comfort)"}
                 </p>
-                <Link href={`/itinerary/${itineraryId}/hotels`} className="text-marigold hover:underline font-bold mt-1 inline-block">
+                <Link href={`/itinerary/${itineraryId}/hotels`} className="text-amber-800 hover:text-amber-950 font-bold mt-1 inline-block hover:underline">
                   View Hotel Details & Options →
                 </Link>
               </div>
@@ -220,15 +293,61 @@ export default function ItineraryHubPage() {
                 <p className="text-deep-charcoal font-semibold mt-0.5">
                   {days.reduce((acc: number, d: any) => acc + (d.itinerary_items?.length || 0), 0)} Curated Activities
                 </p>
-                <Link href={`/itinerary/${itineraryId}/experiences`} className="text-marigold hover:underline font-bold mt-1 inline-block">
+                <Link href={`/itinerary/${itineraryId}/experiences`} className="text-amber-800 hover:text-amber-950 font-bold mt-1 inline-block hover:underline">
                   View Experiences Grid →
                 </Link>
               </div>
             </div>
           </div>
 
+          {/* Interactive Route Map */}
+          <ItineraryRouteMap 
+            days={days}
+            activeDayIndex={activeDayIndex}
+            cityName={cityName}
+          />
+
+          {/* Public Sharing Panel */}
+          <div className="p-6 bg-white border border-border/40 rounded-2xl shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-ink-indigo border-b border-border pb-2 tracking-wide uppercase font-mono">
+              Share Trip
+            </h3>
+            <p className="text-[10px] text-dusk-teal leading-relaxed">
+              Invite friends to view this itinerary and vote on experience choices!
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  alert("Itinerary link copied to clipboard!");
+                }}
+                className="flex-1 min-w-[70px] py-2 px-3 border border-border/60 hover:bg-sand/30 text-ink-indigo rounded-lg text-[10px] font-bold text-center transition focus:ring-1 focus:ring-marigold"
+              >
+                Copy Link
+              </button>
+              <a
+                href={`https://api.whatsapp.com/send?text=Check%20out%20my%20travel%20itinerary!%20${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold transition focus:ring-1 focus:ring-marigold"
+                title="Share to WhatsApp"
+              >
+                WhatsApp
+              </a>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold transition focus:ring-1 focus:ring-marigold"
+                title="Share to Facebook"
+              >
+                Facebook
+              </a>
+            </div>
+          </div>
+
           <Link href={`/itinerary/${itineraryId}/bundle`}>
-            <button className="w-full bg-marigold hover:bg-marigold/90 text-white font-bold py-4 rounded-xl shadow-md transition text-xs">
+            <button className="w-full bg-marigold hover:bg-marigold/90 text-white font-bold py-4 rounded-xl shadow-md transition text-xs focus:ring-2 focus:ring-marigold focus:outline-none">
               Customize & Book Bundle →
             </button>
           </Link>
@@ -239,99 +358,154 @@ export default function ItineraryHubPage() {
           <h2 className="text-xl font-bold text-ink-indigo mb-2">Your Timeline</h2>
           
           <div className="flex flex-col gap-6">
-            {days.map((day: any, dayIdx: number) => (
-              <div key={day.id} className="flex flex-col gap-4">
-                
-                {/* Day Header */}
-                <div className="flex items-center gap-3">
-                  <div className="bg-ink-indigo text-white font-mono font-bold w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-sm">
-                    D{day.day_number}
+            {days.map((day: any, dayIdx: number) => {
+              const isActive = activeDayIndex === dayIdx;
+              return (
+                <div key={day.id} className="flex flex-col gap-4">
+                  
+                  {/* Day Header */}
+                  <div 
+                    onClick={() => setActiveDayIndex(dayIdx)}
+                    className={`flex items-center gap-3 cursor-pointer p-2 rounded-xl transition-all ${
+                      isActive 
+                        ? "bg-marigold/10 border border-marigold/20 shadow-xs" 
+                        : "hover:bg-sand/35"
+                    }`}
+                  >
+                    <div className="bg-ink-indigo text-white font-mono font-bold w-10 h-10 rounded-full flex items-center justify-center text-sm shadow-sm">
+                      D{day.day_number}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-ink-indigo">
+                        Day {day.day_number} — Exploration
+                      </h3>
+                      {isActive && (
+                        <span className="text-[9px] font-mono text-amber-900 font-semibold uppercase">
+                          Showing on Map
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-ink-indigo">
-                    Day {day.day_number} — Exploration
-                  </h3>
-                </div>
 
-                {/* Day Timeline Activities */}
-                <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5 flex flex-col gap-4">
-                  {day.itinerary_items?.map((item: any) => {
-                    const exp = item.experiences;
-                    if (!exp) return null;
-                    const isSwappingThis = swappingItemId === item.id;
+                  {/* Day Timeline Activities */}
+                  <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5 flex flex-col gap-4">
+                    {day.itinerary_items?.map((item: any) => {
+                      const exp = item.experiences;
+                      if (!exp) return null;
+                      const isSwappingThis = swappingItemId === item.id;
+                      const itemVotes = votes[item.id] || { upvotes: 0, downvotes: 0 };
 
-                    return (
-                      <div key={item.id} className="p-4 bg-white border border-border/30 rounded-xl relative shadow-sm hover:shadow transition-all space-y-3">
-                        <div className="absolute left-[-41px] top-[18px] w-4 h-4 bg-marigold rounded-full border-4 border-sand"></div>
-                        
-                        <div className="flex justify-between items-start">
-                          <span className="text-[10px] font-mono bg-sand text-dusk-teal px-2 py-0.5 rounded uppercase font-semibold">
-                            {exp.category}
-                          </span>
+                      return (
+                        <div key={item.id} className="p-4 bg-white border border-border/30 rounded-xl relative shadow-sm hover:shadow transition-all space-y-3">
+                          <div className="absolute left-[-41px] top-[18px] w-4 h-4 bg-marigold rounded-full border-4 border-sand"></div>
                           
-                          <button
-                            onClick={() => handleOpenSwapOptions(item.id, exp.id)}
-                            className="text-[9px] font-bold text-marigold flex items-center gap-1 hover:underline border border-marigold/20 bg-marigold/5 px-2 py-1 rounded"
-                          >
-                            <span>Swap Activity</span>
-                          </button>
-                        </div>
-                        
-                        <h4 className="text-sm font-bold text-ink-indigo">{exp.name}</h4>
-                        <div className="text-xs text-dusk-teal mt-1 flex justify-between font-mono">
-                          <span>Cost Index: {exp.price_band}</span>
-                        </div>
+                          <div className="flex justify-between items-start border-b border-border/10 pb-1.5">
+                            <span className="text-[9px] font-mono bg-sand/60 text-dusk-teal px-2 py-0.5 rounded border border-border/20 uppercase font-semibold">
+                              {exp.category}
+                            </span>
+                            <span className="text-[10px] font-mono font-semibold text-dusk-teal">
+                              Cost Index: {exp.price_band}
+                            </span>
+                          </div>
+                          
+                          <h4 className="text-sm font-bold text-ink-indigo">{exp.name}</h4>
+                          
+                          {/* Vote buttons & Swap buttons Row */}
+                          <div className="flex justify-between items-center pt-2 border-t border-border/10 text-xs">
+                            {/* Voting HUD */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-dusk-teal font-mono uppercase">
+                                Verdict:
+                              </span>
+                              <button
+                                onClick={() => castVote(item.id, "upvote")}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] transition font-mono font-semibold ${
+                                  itemVotes.userVote === "upvote"
+                                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                                    : "border-border/60 hover:bg-sand/35 text-deep-charcoal focus:ring-1 focus:ring-marigold"
+                                }`}
+                                title="Upvote this activity"
+                                aria-label="Upvote this activity"
+                              >
+                                <span>👍</span>
+                                <span>{itemVotes.upvotes}</span>
+                              </button>
+                              <button
+                                onClick={() => castVote(item.id, "downvote")}
+                                className={`flex items-center gap-1 px-2 py-0.5 rounded border text-[10px] transition font-mono font-semibold ${
+                                  itemVotes.userVote === "downvote"
+                                    ? "bg-red-50 border-red-200 text-red-800"
+                                    : "border-border/60 hover:bg-sand/35 text-deep-charcoal focus:ring-1 focus:ring-marigold"
+                                }`}
+                                title="Downvote this activity"
+                                aria-label="Downvote this activity"
+                              >
+                                <span>👎</span>
+                                <span>{itemVotes.downvotes}</span>
+                              </button>
+                            </div>
 
-                        {/* Interactive Swap Choice Panel */}
-                        {isSwappingThis && (
-                          <div className="mt-3 bg-sand/35 border border-border/20 p-3 rounded-lg space-y-2 animate-fade-in text-[11px]">
-                            <div className="font-bold text-ink-indigo">Select Alternate Activity Recommendation:</div>
-                            {swappingLoading ? (
-                              <div className="text-dusk-teal/60 italic py-2 flex items-center gap-1.5">
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                <span>Querying matching alternatives...</span>
-                              </div>
-                            ) : alternatives.length > 0 ? (
-                              <div className="flex flex-col gap-1.5">
-                                {alternatives.map(alt => (
-                                  <button
-                                    key={alt.id}
-                                    onClick={() => handleApplySwap(item.id, alt.id)}
-                                    className="w-full text-left p-2 border border-border hover:border-marigold hover:bg-white rounded transition text-deep-charcoal"
-                                  >
-                                    <span className="font-bold text-ink-indigo">{alt.name}</span>
-                                    <span className="text-[9px] text-dusk-teal block capitalize font-semibold">{alt.category} &bull; {alt.price_band} cost</span>
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-dusk-teal/60 italic">No alternative matches found.</div>
-                            )}
                             <button
-                              onClick={() => setSwappingItemId(null)}
-                              className="text-[9px] text-clay-rose font-bold hover:underline block pt-1"
+                              onClick={() => handleOpenSwapOptions(item.id, exp.id)}
+                              className="text-[10px] font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1 hover:underline border border-amber-800/20 bg-amber-800/5 px-2.5 py-1 rounded-lg transition focus:ring-1 focus:ring-marigold"
+                              aria-label={`Swap experience ${exp.name}`}
                             >
-                              Cancel Swap
+                              <span>Swap Activity</span>
                             </button>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
 
-                {/* Inline Drip Card Injection */}
-                {dayIdx === 0 && itinerary.dna_snapshot_id && (
-                  <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5">
-                    <DripCard 
-                      profileId={itinerary.dna_snapshot_id} 
-                      onUpdate={() => {
-                        fetchItineraryData();
-                      }} 
-                    />
+                          {/* Interactive Swap Choice Panel */}
+                          {isSwappingThis && (
+                            <div className="mt-3 bg-sand/35 border border-border/20 p-3 rounded-lg space-y-2 animate-fade-in text-[11px]">
+                              <div className="font-bold text-ink-indigo">Select Alternate Activity Recommendation:</div>
+                              {swappingLoading ? (
+                                <div className="text-dusk-teal/60 italic py-2 flex items-center gap-1.5">
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Querying matching alternatives...</span>
+                                </div>
+                              ) : alternatives.length > 0 ? (
+                                <div className="flex flex-col gap-1.5">
+                                  {alternatives.map(alt => (
+                                    <button
+                                      key={alt.id}
+                                      onClick={() => handleApplySwap(item.id, alt.id)}
+                                      className="w-full text-left p-2 border border-border hover:border-marigold hover:bg-white rounded transition text-deep-charcoal"
+                                    >
+                                      <span className="font-bold text-ink-indigo">{alt.name}</span>
+                                      <span className="text-[9px] text-dusk-teal block capitalize font-semibold">{alt.category} &bull; {alt.price_band} cost</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-dusk-teal/60 italic">No alternative matches found.</div>
+                              )}
+                              <button
+                                onClick={() => setSwappingItemId(null)}
+                                className="text-[9px] text-clay-rose font-bold hover:underline block pt-1"
+                              >
+                                Cancel Swap
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Inline Drip Card Injection */}
+                  {dayIdx === 0 && itinerary.dna_snapshot_id && (
+                    <div className="border-l-2 border-ink-indigo/20 pl-8 ml-5">
+                      <DripCard 
+                        profileId={itinerary.dna_snapshot_id} 
+                        onUpdate={() => {
+                          fetchItineraryData();
+                        }} 
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
