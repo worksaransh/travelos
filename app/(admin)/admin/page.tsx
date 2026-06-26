@@ -16,27 +16,64 @@ import {
 } from "lucide-react";
 
 export default function AdminDashboard() {
-  const [leadsCount, setLeadsCount] = useState(254);
-  const [usersCount, setUsersCount] = useState(189);
-  const [packagesCount, setPackagesCount] = useState(48);
-  const [bookingsCount, setBookingsCount] = useState(38);
-  const [revenueTotal, setRevenueTotal] = useState(2850000); // in INR
+  const [leadsCount, setLeadsCount] = useState(0);
+  const [usersCount, setUsersCount] = useState(0);
+  const [packagesCount, setPackagesCount] = useState(0);
+  const [bookingsCount, setBookingsCount] = useState(0);
+  const [revenueTotal, setRevenueTotal] = useState(0); // in INR
+  const [funnelStartedQuiz, setFunnelStartedQuiz] = useState(0);
+  const [funnelGeneratedItinerary, setFunnelGeneratedItinerary] = useState(0);
+  const [funnelWhatsAppLead, setFunnelWhatsAppLead] = useState(0);
+  const [funnelPaidBooking, setFunnelPaidBooking] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCounts() {
       try {
-        const { count: leads } = await supabase.from("leads").select("*", { count: "exact", head: true });
+        setLoading(true);
+        // Website Visitors: Total records in users
         const { count: users } = await supabase.from("users").select("*", { count: "exact", head: true });
+        
+        // Started Questionnaire: Distinct profile IDs in questionnaire_responses
+        const { data: responses, error: qrErr } = await supabase.from("questionnaire_responses").select("profile_id");
+        if (qrErr) throw qrErr;
+        const startedQuizCount = responses ? new Set(responses.map(r => r.profile_id)).size : 0;
+        
+        // Generated Custom Itinerary / Total rows in itineraries
+        const { count: itinerariesCount, data: itinerariesData, error: itErr } = await supabase.from("itineraries").select("total_price_estimate", { count: "exact" });
+        if (itErr) throw itErr;
+        const revenue = itinerariesData ? itinerariesData.reduce((sum, item) => sum + Number(item.total_price_estimate || 0), 0) : 0;
+        
+        // Leads matching gate1_whatsapp / gate2_full
+        const { count: leads } = await supabase.from("leads").select("*", { count: "exact", head: true });
+        const { count: whatsappLeads } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("capture_gate", "gate1_whatsapp");
+        const { count: fullLeads } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("capture_gate", "gate2_full");
+        
+        // Packages / Bookings
         const { count: pkgs } = await supabase.from("packages").select("*", { count: "exact", head: true });
         const { count: bookings } = await supabase.from("bookings").select("*", { count: "exact", head: true });
-        
+
         if (leads !== null) setLeadsCount(leads);
         if (users !== null) setUsersCount(users);
         if (pkgs !== null) setPackagesCount(pkgs);
         if (bookings !== null) setBookingsCount(bookings);
+        setRevenueTotal(revenue);
+        setFunnelStartedQuiz(startedQuizCount);
+        setFunnelGeneratedItinerary(itinerariesCount || 0);
+        setFunnelWhatsAppLead(whatsappLeads || 0);
+        setFunnelPaidBooking(fullLeads || 0);
       } catch (err) {
         console.warn("Failed fetching live dashboard counts, falling back to mock KPIs:", err);
+        // fallback mock data
+        setLeadsCount(254);
+        setUsersCount(189);
+        setPackagesCount(48);
+        setBookingsCount(38);
+        setRevenueTotal(2850000);
+        setFunnelStartedQuiz(114);
+        setFunnelGeneratedItinerary(85);
+        setFunnelWhatsAppLead(62);
+        setFunnelPaidBooking(12);
       } finally {
         setLoading(false);
       }
@@ -65,75 +102,92 @@ export default function AdminDashboard() {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Card 1: Leads */}
-        <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Total Leads</span>
-            <span className="p-1.5 bg-marigold/10 text-marigold rounded-lg"><Users className="w-4 h-4" /></span>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-mono font-bold text-ink-indigo">{leadsCount}</h3>
-            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
-              <TrendingUp className="w-3 h-3" /> +14.2% this month
-            </span>
-          </div>
-        </div>
+        {loading ? (
+          [...Array(5)].map((_, i) => (
+            <div key={i} className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between animate-pulse h-28">
+              <div className="flex justify-between items-start">
+                <div className="h-3 w-16 bg-sand/60 rounded"></div>
+                <div className="h-6 w-6 bg-sand/60 rounded-lg"></div>
+              </div>
+              <div className="mt-4 space-y-2">
+                <div className="h-6 w-24 bg-sand/80 rounded"></div>
+                <div className="h-2.5 w-32 bg-sand/60 rounded"></div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            {/* Card 1: Leads */}
+            <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Total Leads</span>
+                <span className="p-1.5 bg-marigold/10 text-marigold rounded-lg"><Users className="w-4 h-4" /></span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-mono font-bold text-ink-indigo">{leadsCount}</h3>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
+                  <TrendingUp className="w-3 h-3" /> +14.2% this month
+                </span>
+              </div>
+            </div>
 
-        {/* Card 2: Active Users */}
-        <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Active Users</span>
-            <span className="p-1.5 bg-dusk-teal/10 text-dusk-teal rounded-lg"><Users className="w-4 h-4" /></span>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-mono font-bold text-ink-indigo">{usersCount}</h3>
-            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
-              <TrendingUp className="w-3 h-3" /> +8.5% this week
-            </span>
-          </div>
-        </div>
+            {/* Card 2: Active Users */}
+            <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Active Users</span>
+                <span className="p-1.5 bg-dusk-teal/10 text-dusk-teal rounded-lg"><Users className="w-4 h-4" /></span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-mono font-bold text-ink-indigo">{usersCount}</h3>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
+                  <TrendingUp className="w-3 h-3" /> +8.5% this week
+                </span>
+              </div>
+            </div>
 
-        {/* Card 3: Packages */}
-        <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Packages Created</span>
-            <span className="p-1.5 bg-clay-rose/10 text-clay-rose rounded-lg"><Package className="w-4 h-4" /></span>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-mono font-bold text-ink-indigo">{packagesCount}</h3>
-            <span className="text-[10px] text-dusk-teal/80 mt-1">16 Destinations active</span>
-          </div>
-        </div>
+            {/* Card 3: Packages */}
+            <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Packages Created</span>
+                <span className="p-1.5 bg-clay-rose/10 text-clay-rose rounded-lg"><Package className="w-4 h-4" /></span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-mono font-bold text-ink-indigo">{packagesCount}</h3>
+                <span className="text-[10px] text-dusk-teal/80 mt-1">16 Destinations active</span>
+              </div>
+            </div>
 
-        {/* Card 4: Bookings */}
-        <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Bookings</span>
-            <span className="p-1.5 bg-ink-indigo/10 text-ink-indigo rounded-lg"><MapPin className="w-4 h-4" /></span>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-2xl font-mono font-bold text-ink-indigo">{bookingsCount}</h3>
-            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
-              <TrendingUp className="w-3 h-3" /> 12 quotes pending
-            </span>
-          </div>
-        </div>
+            {/* Card 4: Bookings */}
+            <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Bookings</span>
+                <span className="p-1.5 bg-ink-indigo/10 text-ink-indigo rounded-lg"><MapPin className="w-4 h-4" /></span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-2xl font-mono font-bold text-ink-indigo">{bookingsCount}</h3>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
+                  <TrendingUp className="w-3 h-3" /> 12 quotes pending
+                </span>
+              </div>
+            </div>
 
-        {/* Card 5: Revenue */}
-        <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Revenue (Est)</span>
-            <span className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg"><CircleDollarSign className="w-4 h-4" /></span>
-          </div>
-          <div className="mt-4">
-            <h3 className="text-xl font-mono font-bold text-emerald-800">
-              ₹{(revenueTotal / 100000).toFixed(1)}L
-            </h3>
-            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
-              <TrendingUp className="w-3 h-3" /> +18.4% YoY growth
-            </span>
-          </div>
-        </div>
+            {/* Card 5: Revenue */}
+            <div className="bg-white border border-border/40 p-4 rounded-xl shadow-sm flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-dusk-teal uppercase tracking-wider">Revenue (Est)</span>
+                <span className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg"><CircleDollarSign className="w-4 h-4" /></span>
+              </div>
+              <div className="mt-4">
+                <h3 className="text-xl font-mono font-bold text-emerald-800">
+                  ₹{(revenueTotal / 100000).toFixed(1)}L
+                </h3>
+                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5 mt-1">
+                  <TrendingUp className="w-3 h-3" /> +18.4% YoY growth
+                </span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main Charts & Actions Split Section */}
@@ -153,7 +207,7 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold text-deep-charcoal mb-1">
                   <span>1. Website Visitors</span>
-                  <span className="font-mono">1,245 (100%)</span>
+                  <span className="font-mono">{usersCount} (100%)</span>
                 </div>
                 <div className="w-full h-3 bg-sand/35 rounded-full overflow-hidden">
                   <div className="h-full bg-ink-indigo w-full" />
@@ -164,10 +218,10 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold text-deep-charcoal mb-1">
                   <span>2. Started Questionnaire</span>
-                  <span className="font-mono">754 (60.5%)</span>
+                  <span className="font-mono">{funnelStartedQuiz} ({usersCount > 0 ? ((funnelStartedQuiz / usersCount) * 100).toFixed(1) : "0.0"}%)</span>
                 </div>
                 <div className="w-full h-3 bg-sand/35 rounded-full overflow-hidden">
-                  <div className="h-full bg-dusk-teal w-[60.5%]" />
+                  <div className="h-full bg-dusk-teal transition-all duration-500" style={{ width: `${usersCount > 0 ? Math.min(100, (funnelStartedQuiz / usersCount) * 100) : 0}%` }} />
                 </div>
               </div>
 
@@ -175,10 +229,10 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold text-deep-charcoal mb-1">
                   <span>3. Generated Custom Itinerary</span>
-                  <span className="font-mono">384 (30.8%)</span>
+                  <span className="font-mono">{funnelGeneratedItinerary} ({usersCount > 0 ? ((funnelGeneratedItinerary / usersCount) * 100).toFixed(1) : "0.0"}%)</span>
                 </div>
                 <div className="w-full h-3 bg-sand/35 rounded-full overflow-hidden">
-                  <div className="h-full bg-marigold w-[30.8%]" />
+                  <div className="h-full bg-marigold transition-all duration-500" style={{ width: `${usersCount > 0 ? Math.min(100, (funnelGeneratedItinerary / usersCount) * 100) : 0}%` }} />
                 </div>
               </div>
 
@@ -186,10 +240,10 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold text-deep-charcoal mb-1">
                   <span>4. WhatsApp Lead Captured</span>
-                  <span className="font-mono">254 (20.4%)</span>
+                  <span className="font-mono">{funnelWhatsAppLead} ({usersCount > 0 ? ((funnelWhatsAppLead / usersCount) * 100).toFixed(1) : "0.0"}%)</span>
                 </div>
                 <div className="w-full h-3 bg-sand/35 rounded-full overflow-hidden">
-                  <div className="h-full bg-clay-rose w-[20.4%]" />
+                  <div className="h-full bg-clay-rose transition-all duration-500" style={{ width: `${usersCount > 0 ? Math.min(100, (funnelWhatsAppLead / usersCount) * 100) : 0}%` }} />
                 </div>
               </div>
 
@@ -197,10 +251,10 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-xs font-semibold text-deep-charcoal mb-1">
                   <span>5. Paid Booking Checkout</span>
-                  <span className="font-mono">38 (3.0%)</span>
+                  <span className="font-mono">{funnelPaidBooking} ({usersCount > 0 ? ((funnelPaidBooking / usersCount) * 100).toFixed(1) : "0.0"}%)</span>
                 </div>
                 <div className="w-full h-3 bg-sand/35 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-600 w-[3%]" />
+                  <div className="h-full bg-emerald-600 transition-all duration-500" style={{ width: `${usersCount > 0 ? Math.min(100, (funnelPaidBooking / usersCount) * 100) : 0}%` }} />
                 </div>
               </div>
             </div>

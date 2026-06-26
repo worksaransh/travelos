@@ -24,7 +24,8 @@ import {
   X,
   Bell,
   User,
-  ClipboardList
+  ClipboardList,
+  Terminal
 } from "lucide-react";
 
 interface SidebarItem {
@@ -49,6 +50,7 @@ const sidebarItems: SidebarItem[] = [
   { name: "SEO Manager", href: "/admin/seo", icon: Search },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Improvement Logs", href: "/admin/improvements", icon: ClipboardList },
+  { name: "SQL Console", href: "/admin/sql-console", icon: Terminal },
   { name: "Audit Logs", href: "/admin/logs", icon: ScrollText },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];

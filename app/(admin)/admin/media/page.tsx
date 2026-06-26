@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import AdminTable, { Column, TableAction } from "@/components/admin/AdminTable";
-import { Folder, Image as ImageIcon, Plus, Edit, Download, Trash2, Check, AlertCircle } from "lucide-react";
+import { Folder, Image as ImageIcon, Plus, Edit, Download, Trash2, Check, AlertCircle, Zap } from "lucide-react";
 
 interface MediaItem {
   id: string;
@@ -43,6 +43,26 @@ export default function MediaLibraryAdmin() {
   const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [compressing, setCompressing] = useState(false);
+
+  const handleCompress = async () => {
+    setCompressing(true);
+    try {
+      const res = await fetch("/api/media/compress", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMsg(`WebP conversion complete! Converted: ${data.converted} files. Failed: ${data.failed}.`);
+        loadMedia(); // reload manifest to show .webp format changes
+      } else {
+        alert("Compression failed: " + data.error);
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setCompressing(false);
+      setTimeout(() => setSuccessMsg(""), 5000);
+    }
+  };
 
   // Edit fields
   const [altText, setAltText] = useState("");
@@ -212,21 +232,35 @@ export default function MediaLibraryAdmin() {
             Optimize, tags calibrate, and govern public image catalogs.
           </p>
         </div>
-        <button
-          onClick={() => {
-            const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mediaItems, null, 2));
-            const downloadAnchor = document.createElement("a");
-            downloadAnchor.setAttribute("href", jsonStr);
-            downloadAnchor.setAttribute("download", `MANIFEST_UPDATE_${selectedFolder.replace(/\//g, "_")}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-          }}
-          className="flex items-center gap-1.5 px-3.5 py-2 bg-ink-indigo text-white rounded-lg text-xs font-semibold hover:bg-ink-indigo/90 transition shadow-sm"
-        >
-          <Download className="w-3.5 h-3.5 text-marigold" />
-          <span>Download Manifest Patch</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCompress}
+            disabled={compressing}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition shadow-sm ${
+              compressing
+                ? "bg-marigold/50 text-white cursor-not-allowed"
+                : "bg-marigold text-white hover:bg-marigold/90"
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${compressing ? "animate-bounce" : ""}`} />
+            <span>{compressing ? "Compressing..." : "⚡ Run WebP Compression"}</span>
+          </button>
+          <button
+            onClick={() => {
+              const jsonStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mediaItems, null, 2));
+              const downloadAnchor = document.createElement("a");
+              downloadAnchor.setAttribute("href", jsonStr);
+              downloadAnchor.setAttribute("download", `MANIFEST_UPDATE_${selectedFolder.replace(/\//g, "_")}.json`);
+              document.body.appendChild(downloadAnchor);
+              downloadAnchor.click();
+              downloadAnchor.remove();
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-ink-indigo text-white rounded-lg text-xs font-semibold hover:bg-ink-indigo/90 transition shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5 text-marigold" />
+            <span>Download Manifest Patch</span>
+          </button>
+        </div>
       </div>
 
       {successMsg && (
