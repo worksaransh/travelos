@@ -3,113 +3,113 @@
     "c26ec203-53b1-4b83-9958-90bcfb3a01de": {
       "name": "Singapore",
       "images": {
-        "hero": "/images/cities/c1000000-0000-0000-0000-000000000001-hero.jpg",
-        "thumb": "/images/cities/c1000000-0000-0000-0000-000000000001-thumb.jpg"
+        "hero": "/images/cities/c1000000-0000-0000-0000-000000000001-hero.webp",
+        "thumb": "/images/cities/c1000000-0000-0000-0000-000000000001-thumb.webp"
       }
     },
     "ea99d447-5524-437d-87fe-fb95036f6143": {
       "name": "Dubai",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "52b3a5dc-9eb7-4a77-b7b0-b567aee57404": {
       "name": "Bangkok",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "504d8137-8e84-4199-8978-b821f5213233": {
       "name": "Bali (Denpasar)",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "e58e1f8b-f08b-4c15-a474-bd781f996220": {
       "name": "Male / Resort Atolls",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "6057aad2-c3e7-4733-9c57-202eccfc52a6": {
       "name": "Hanoi / Halong / Ho Chi Minh City",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "61ea5494-aa76-49be-a659-0b270db3d2cc": {
       "name": "Colombo / Kandy / Galle",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "beb54bd5-465a-441b-acf6-b7d3f76e5a8e": {
       "name": "Kuala Lumpur / Langkawi",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "69a879f7-3e51-46b2-b73c-54fdb82b6bf9": {
       "name": "Port Louis / Grand Baie",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "78eea878-3122-45ce-a2da-48cc70c873a5": {
       "name": "Thimphu / Paro / Punakha",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "7bdcd9b8-4a8e-49a0-862a-b1c9213dc30b": {
       "name": "Goa",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "48a72c99-011c-46bb-96c0-e82aad486a29": {
       "name": "Kochi / Munnar / Alleppey",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "1ea2ebfc-0e67-48a5-93e2-3875f5306c81": {
       "name": "Manali / Kullu",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "314bdfff-84fd-4054-9549-ffad084044dc": {
       "name": "Jaipur / Udaipur",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "d35c15d9-03c1-4a83-8aef-e6bcbf1184a6": {
       "name": "Port Blair / Havelock",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     },
     "396e7fc0-3d4c-4301-9296-dc9b83d91632": {
       "name": "Srinagar / Gulmarg / Pahalgam",
       "images": {
-        "hero": "/images/placeholder-hero.jpg",
-        "thumb": "/images/placeholder-thumb.jpg"
+        "hero": "/images/placeholder-hero.webp",
+        "thumb": "/images/placeholder-thumb.webp"
       }
     }
   },
@@ -118,175 +118,175 @@
       "name": "Universal Studios Singapore",
       "category": "Theme Parks",
       "images": {
-        "card": "/images/experiences/e0000000-0000-0000-0000-000000000001-card.jpg",
-        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000001-feature.jpg"
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000001-card.webp",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000001-feature.webp"
       }
     },
     "b9cf79e4-e223-4c05-9288-8462f6357a8d": {
       "name": "Beach Clubs (Sentosa)",
       "category": "Beaches",
       "images": {
-        "card": "/images/experiences/e0000000-0000-0000-0000-000000000002-card.jpg",
-        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000002-feature.jpg"
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000002-card.webp",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000002-feature.webp"
       }
     },
     "a03beb10-494b-4075-b378-41a53e5084cc": {
       "name": "Marina Bay Sands SkyPark",
       "category": "Luxury Hotels",
       "images": {
-        "card": "/images/experiences/e0000000-0000-0000-0000-000000000003-card.jpg",
-        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000003-feature.jpg"
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000003-card.webp",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000003-feature.webp"
       },
       "image_library": [
         {
-          "filename": "marina-bay-sands-hotel-exterior-day-singapore.jpg",
+          "filename": "marina-bay-sands-hotel-exterior-day-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Marina Bay Sands hotel exterior in Singapore",
           "meta_title": "Marina Bay Sands Hotel | Singapore Exterior View",
           "meta_description": "Daytime view of Marina Bay Sands hotel in Singapore with modern architecture and waterfront views.",
           "keywords": "Marina Bay Sands, Singapore hotel, luxury hotel Singapore",
           "caption": "Marina Bay Sands Hotel Exterior, Daytime View",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-hotel-exterior-day-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-hotel-exterior-day-singapore.webp"
         },
         {
-          "filename": "marina-bay-sands-night-view-singapore-skyline.jpg",
+          "filename": "marina-bay-sands-night-view-singapore-skyline.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Marina Bay Sands night view with Singapore skyline",
           "meta_title": "Marina Bay Sands Night Skyline | Singapore",
           "meta_description": "Spectacular night view of Marina Bay Sands with the city skyline lights and waterfront reflections.",
           "keywords": "Marina Bay Sands night, Singapore skyline night, Marina Bay light show",
           "caption": "Marina Bay Sands Night Skyline and Laser Light Show",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-night-view-singapore-skyline.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-night-view-singapore-skyline.webp"
         },
         {
-          "filename": "marina-bay-sands-infinity-pool-sunset-singapore.jpg",
+          "filename": "marina-bay-sands-infinity-pool-sunset-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Singapore skyline from Marina Bay Sands infinity pool at sunset",
           "meta_title": "Marina Bay Sands Infinity Pool | Sunset Skyline View",
           "meta_description": "A traveler relaxes at the edge of the world's largest rooftop infinity pool during sunset.",
           "keywords": "MBS infinity pool, Marina Bay Sands pool, Singapore sunset pool",
           "caption": "Rooftop Infinity Pool at Sunset",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-infinity-pool-sunset-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-infinity-pool-sunset-singapore.webp"
         },
         {
-          "filename": "singapore-skyline-view-from-skypark-observation-deck.jpg",
+          "filename": "singapore-skyline-view-from-skypark-observation-deck.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Panoramic view of Singapore from Marina Bay Sands Skypark observation deck",
           "meta_title": "MBS Skypark Observation Deck View | Singapore",
           "meta_description": "Breathtaking panoramic view of Singapore's skyline from the Skypark observation deck.",
           "keywords": "MBS observation deck, Skypark view Singapore, Marina Bay Sands deck",
           "caption": "Singapore Skyline View from Skypark Observation Deck",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/singapore-skyline-view-from-skypark-observation-deck.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/singapore-skyline-view-from-skypark-observation-deck.webp"
         },
         {
-          "filename": "marina-bay-sands-luxury-lobby-interior-singapore.jpg",
+          "filename": "marina-bay-sands-luxury-lobby-interior-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Luxury lobby interior of Marina Bay Sands hotel in Singapore",
           "meta_title": "Marina Bay Sands Hotel Lobby | Luxury Interior",
           "meta_description": "Spacious and elegant lobby interior of Marina Bay Sands hotel with high ceilings and warm lighting.",
           "keywords": "Marina Bay Sands lobby, MBS interior, luxury hotel lobby Singapore",
           "caption": "Spacious Atrium Lobby and Interior",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-luxury-lobby-interior-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-luxury-lobby-interior-singapore.webp"
         },
         {
-          "filename": "spago-restaurant-dining-rooftop-marina-bay-sands.jpg",
+          "filename": "spago-restaurant-dining-rooftop-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Rooftop dining at Spago Marina Bay Sands in Singapore",
           "meta_title": "Spago Rooftop Restaurant | Marina Bay Sands",
           "meta_description": "Fine rooftop dining experience at Spago by Wolfgang Puck on top of Marina Bay Sands.",
           "keywords": "Spago Singapore, Marina Bay Sands restaurant, MBS rooftop dining",
           "caption": "Fine Dining at Spago Rooftop Restaurant",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/spago-restaurant-dining-rooftop-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/spago-restaurant-dining-rooftop-marina-bay-sands.webp"
         },
         {
-          "filename": "marina-bay-sands-hotel-suite-room-singapore.jpg",
+          "filename": "marina-bay-sands-hotel-suite-room-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Luxury hotel suite room at Marina Bay Sands Singapore",
           "meta_title": "Marina Bay Sands Hotel Suite | Luxury Room",
           "meta_description": "Spacious hotel suite interior at Marina Bay Sands with premium amenities and floor-to-ceiling windows.",
           "keywords": "Marina Bay Sands suite, MBS luxury room, Singapore hotel suite",
           "caption": "Luxury Hotel Suite Room",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-hotel-suite-room-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/marina-bay-sands-hotel-suite-room-singapore.webp"
         },
         {
-          "filename": "gardens-pathway-view-looking-up-at-marina-bay-sands.jpg",
+          "filename": "gardens-pathway-view-looking-up-at-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "View of Marina Bay Sands towers from Gardens by the Bay pathway",
           "meta_title": "MBS Towers from Gardens Pathway | Singapore",
           "meta_description": "Scenic view of the iconic Marina Bay Sands towers from a garden pathway framed by tropical foliage.",
           "keywords": "MBS from Gardens by the Bay, Singapore garden walkway, looking up at MBS",
           "caption": "View of MBS Towers from Gardens Pathway",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/gardens-pathway-view-looking-up-at-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/gardens-pathway-view-looking-up-at-marina-bay-sands.webp"
         },
         {
-          "filename": "artscience-museum-lotus-lily-pond-singapore.jpg",
+          "filename": "artscience-museum-lotus-lily-pond-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "ArtScience Museum lily pond with Marina Bay Sands Singapore",
           "meta_title": "ArtScience Museum Lily Pond | Singapore Waterfront",
           "meta_description": "Lotus-shaped ArtScience Museum building and foreground lily pond with Marina Bay Sands hotel behind.",
           "keywords": "ArtScience Museum Singapore, lotus building Singapore, lily pond Marina Bay",
           "caption": "ArtScience Museum Lotus building and Lily Pond",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/artscience-museum-lotus-lily-pond-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/artscience-museum-lotus-lily-pond-singapore.webp"
         },
         {
-          "filename": "shoppes-canal-gondola-ride-marina-bay-sands.jpg",
+          "filename": "shoppes-canal-gondola-ride-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Indoor canal gondola ride at Shoppes at Marina Bay Sands",
           "meta_title": "The Shoppes Indoor Canal | Gondola Ride Singapore",
           "meta_description": "Travelers take a wooden boat ride on the indoor canal at The Shoppes at Marina Bay Sands shopping mall.",
           "keywords": "Shoppes canal boat, MBS gondola, Marina Bay Sands shopping mall",
           "caption": "Indoor Canal Boat Ride at The Shoppes",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/shoppes-canal-gondola-ride-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/shoppes-canal-gondola-ride-marina-bay-sands.webp"
         },
         {
-          "filename": "club-lounge-sunset-view-marina-bay-sands-singapore.jpg",
+          "filename": "club-lounge-sunset-view-marina-bay-sands-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Club lounge interior view of harbor at Marina Bay Sands Singapore",
           "meta_title": "MBS Club Lounge | Executive Sunset View",
           "meta_description": "Elegant executive club lounge at Marina Bay Sands overlooking Singapore harbor during sunset.",
           "keywords": "MBS club lounge, executive lounge Singapore, Marina Bay lounge view",
           "caption": "Executive Club Lounge Sunset View",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/club-lounge-sunset-view-marina-bay-sands-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/club-lounge-sunset-view-marina-bay-sands-singapore.webp"
         },
         {
-          "filename": "spectra-laser-light-water-show-marina-bay-sands.jpg",
+          "filename": "spectra-laser-light-water-show-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Spectra laser light and water show at Marina Bay Sands Singapore",
           "meta_title": "Spectra Light & Water Show | Marina Bay Promenade",
           "meta_description": "Evening laser light show, music, and dancing water fountains at the Marina Bay Sands promenade.",
           "keywords": "Spectra light show, Marina Bay laser show, MBS water show",
           "caption": "Spectra Laser Light and Water Show",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/spectra-laser-light-water-show-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/spectra-laser-light-water-show-marina-bay-sands.webp"
         },
         {
-          "filename": "helix-bridge-view-marina-bay-sands-singapore.jpg",
+          "filename": "helix-bridge-view-marina-bay-sands-singapore.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Marina Bay Sands view from Helix Bridge in Singapore",
           "meta_title": "Marina Bay Sands from Helix Bridge | Singapore",
           "meta_description": "Night view of Marina Bay Sands framed through the double-helix architectural structure of the Helix Bridge.",
           "keywords": "Helix Bridge view, MBS night Helix, Singapore bridge photography",
           "caption": "View of Marina Bay Sands from the Helix Bridge",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/helix-bridge-view-marina-bay-sands-singapore.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/helix-bridge-view-marina-bay-sands-singapore.webp"
         },
         {
-          "filename": "banyan-tree-spa-treatment-room-marina-bay-sands.jpg",
+          "filename": "banyan-tree-spa-treatment-room-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Banyan Tree Spa treatment room at Marina Bay Sands Singapore",
           "meta_title": "Banyan Tree Spa Room | Luxury Wellness",
           "meta_description": "Relaxing wellness treatment room at the premium Banyan Tree Spa on top of Marina Bay Sands.",
           "keywords": "Banyan Tree Spa Singapore, luxury spa MBS, wellness treatment Singapore",
           "caption": "Treatment Room at Banyan Tree Spa",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/banyan-tree-spa-treatment-room-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/banyan-tree-spa-treatment-room-marina-bay-sands.webp"
         },
         {
-          "filename": "ce-la-vi-rooftop-bar-nightlife-marina-bay-sands.jpg",
+          "filename": "ce-la-vi-rooftop-bar-nightlife-marina-bay-sands.webp",
           "folder": "03_Attractions/Marina-Bay-Sands",
           "alt_text": "Ce La Vi rooftop bar nightlife at Marina Bay Sands Singapore",
           "meta_title": "Ce La Vi Rooftop Bar | Singapore Nightlife",
           "meta_description": "Lively nightlife atmosphere and cocktails at Ce La Vi rooftop bar on Marina Bay Sands sky deck.",
           "keywords": "Ce La Vi Singapore, rooftop bar Marina Bay Sands, MBS nightlife",
           "caption": "Ce La Vi Rooftop Bar and Nightlife View",
-          "filepath": "/images/03_Attractions/Marina-Bay-Sands/ce-la-vi-rooftop-bar-nightlife-marina-bay-sands.jpg"
+          "filepath": "/images/03_Attractions/Marina-Bay-Sands/ce-la-vi-rooftop-bar-nightlife-marina-bay-sands.webp"
         }
       ]
     },
@@ -294,440 +294,440 @@
       "name": "Gardens by the Bay",
       "category": "Nature",
       "images": {
-        "card": "/images/experiences/e0000000-0000-0000-0000-000000000004-card.jpg",
-        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000004-feature.jpg"
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000004-card.webp",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000004-feature.webp"
       }
     },
     "00a31716-acda-4554-a2d2-904936e0c835": {
       "name": "Orchard Road Shopping",
       "category": "Shopping Malls",
       "images": {
-        "card": "/images/experiences/e0000000-0000-0000-0000-000000000005-card.jpg",
-        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000005-feature.jpg"
+        "card": "/images/experiences/e0000000-0000-0000-0000-000000000005-card.webp",
+        "feature": "/images/experiences/e0000000-0000-0000-0000-000000000005-feature.webp"
       }
     },
     "ba73ab4c-bc15-4d9c-93ca-97dbd1ca1034": {
       "name": "Burj Khalifa Observation Deck",
       "category": "Luxury Hotels",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "8caccafa-7a31-456b-bb13-5539411fedea": {
       "name": "Dubai Mall + Aquarium",
       "category": "Shopping Malls",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "32b21a8e-aaaf-498d-b0e7-dd12bb73e328": {
       "name": "Desert Safari with BBQ Dinner",
       "category": "Adventure",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "5df758d6-9bc3-470a-9df9-f1517e163e8f": {
       "name": "Al Fahidi Quarter + Souks",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "9fbc1b3f-5db9-4f4b-8f76-3a5f39432779": {
       "name": "Atlantis Aquaventure Waterpark",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "a4bf6566-9443-4dd0-bc0f-374df1e491ce": {
       "name": "Grand Palace + Wat Phra Kaew",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "6ecd3c06-bca6-4395-b6f5-bbcc6e44478c": {
       "name": "Chao Phraya River Cruise",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "a611844c-ea81-498a-801c-5e8750a37748": {
       "name": "Floating Markets Tour",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "4ddf64ee-bb07-499a-8f31-44c19dd35f45": {
       "name": "Phi Phi Islands Day Trip",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "57cea808-ab68-43dd-aca0-3ae9d33ca6bc": {
       "name": "Ubud Rice Terraces + Monkey Forest",
       "category": "Nature",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "c28ad09e-6b21-42da-9a72-8f68616f25a6": {
       "name": "Balinese Spiritual Spa Retreat",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "9f32249c-c951-4125-b505-511d97e91b45": {
       "name": "Seminyak Beach Clubs",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "31007c4f-e55f-41f7-92cd-cbc0ffb59e03": {
       "name": "Nusa Penida Island Tour",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "a0bf5e15-c217-44fd-8316-9e2f8c86c0b1": {
       "name": "Overwater Villa Stay",
       "category": "Luxury Hotels",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "95836c88-a5db-414d-bb06-1fa9c488f638": {
       "name": "Snorkeling & House Reef Tour",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "0cfeb0ff-a880-47ca-9bde-b57adbfb1aef": {
       "name": "Sunset Dolphin Cruise",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "c345b062-040d-4da0-bb6a-41669b59d082": {
       "name": "Local Island Cultural Visit",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "1dfe29e0-918b-4157-b3ee-044cfa4deaff": {
       "name": "Halong Bay Overnight Cruise",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "ba1c1177-7ca6-4545-98de-8711b0195c99": {
       "name": "Hanoi Old Quarter Food Walk",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "92000970-0ae5-47ab-9532-23052e26f73c": {
       "name": "Mekong Delta Day Tour",
       "category": "Nature",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "9327a9e1-9233-4602-807d-575aae59315c": {
       "name": "Temple of the Sacred Tooth Relic",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "aae6b702-de1f-4f2a-9fc5-834fdc4756be": {
       "name": "Tea Plantation Tour (Nuwara Eliya)",
       "category": "Nature",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "c3b2142f-7e65-444f-9f74-09647a648394": {
       "name": "Galle Fort Heritage Walk",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "dcfdfae5-0426-4b6a-97b9-af2396820af2": {
       "name": "Mirissa Whale Watching",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "fd06cc58-80a5-46d1-946d-7d864756acff": {
       "name": "Petronas Towers + KL Skyline",
       "category": "Photography Spots",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "6778fc99-2f23-4ddf-bb73-0874a80e6fa9": {
       "name": "Batu Caves",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "7a073abd-8463-47ae-b53b-4033bf80f9f5": {
       "name": "Genting Highlands Theme Park",
       "category": "Theme Parks",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "123bec54-f3b8-407b-a453-6ddfb530c916": {
       "name": "Langkawi Island Hopping",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "3f61874e-dfe3-4779-8d2c-b4fe5e4da01d": {
       "name": "Catamaran Cruise with Dolphins",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "b2ced78d-2bcf-4221-b97e-25f7955f98d4": {
       "name": "Black River Gorges + Chamarel",
       "category": "Nature",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "8b8be63e-238a-487a-add0-cc41d0ca06f8": {
       "name": "Local Market + Creole Food Tour",
       "category": "Food",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "532cf3b4-8e3f-40a0-b5ca-3725a0a6f46f": {
       "name": "Tiger's Nest Monastery Hike",
       "category": "Trekking",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "c2e3e544-6a77-41fe-947c-43d108775d16": {
       "name": "Buddha Dordenma + Local Markets",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "0702765d-b037-4c95-8756-624d5005a555": {
       "name": "Punakha Dzong + Suspension Bridge",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "b3e4b9e2-1395-41ac-b7f3-1aed00b1c618": {
       "name": "Baga-Calangute Beach Hopping",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "c335ae69-724a-4b0b-b105-3da7eb4068a0": {
       "name": "Arpora Night Market",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "8941bd54-4e0f-4318-bdc5-da4f2956d2f6": {
       "name": "Palolem & Agonda Beach",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "04f63887-a387-442a-9688-1c2a44647622": {
       "name": "Basilica of Bom Jesus + Forts",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "2b47944a-55dc-475f-ae90-c8f805c22c43": {
       "name": "Backwater Houseboat Stay",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "5f6bdb3a-475f-4502-9b38-d7f72f1fea19": {
       "name": "Tea Garden Trek + Viewpoints",
       "category": "Trekking",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "dd49a471-1e6a-484d-a13c-a9229ba374a0": {
       "name": "Fort Kochi Heritage Walk",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "cf328b9b-439b-4bf5-9471-1ab10750a0e8": {
       "name": "Paragliding + Snow Activities",
       "category": "Adventure",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "87820775-4a4a-4c62-a9b1-199778c6ef80": {
       "name": "Cafe Hopping + River Walk",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "72f06827-6939-4a56-8cd5-d23fe266a2b0": {
       "name": "Kullu Rafting + Valley Drive",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "675d86b4-5816-48d5-b327-fa826b47aec3": {
       "name": "Amber Fort + City Palace",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "86fd293a-b8f3-42c7-8383-0caa59ed81ae": {
       "name": "Jaipur Bazaars (Johari/Bapu)",
       "category": "Local Markets",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "9206e8df-8ed6-4a0d-bdb0-c408da6db0ae": {
       "name": "Lake Pichola Boat Ride + City Palace",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "5bad2a9d-73f9-4868-aa5e-c813002a8ede": {
       "name": "Radhanagar Beach + Snorkeling",
       "category": "Beaches",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "8127fdba-5b4b-4edc-8902-9cdbd9d7b82b": {
       "name": "Scuba Diving Havelock",
       "category": "Water Sports",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "24022c68-5f82-4186-a909-10dcf04f63b8": {
       "name": "Cellular Jail Light & Sound Show",
       "category": "Culture",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "350a7c3c-010e-4d54-9bc2-807dd300a3d1": {
       "name": "Dal Lake Shikara + Houseboat",
       "category": "Cruises",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "5eb47ae6-6007-47b9-9020-361511b593c1": {
       "name": "Gondola Ride + Snow Activities",
       "category": "Adventure",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     },
     "1673a368-6873-42ad-a8e3-edd6e8f56810": {
       "name": "Betaab Valley + Aru Valley",
       "category": "Nature",
       "images": {
-        "card": "/images/placeholder-thumb.jpg",
-        "feature": "/images/placeholder-hero.jpg"
+        "card": "/images/placeholder-thumb.webp",
+        "feature": "/images/placeholder-hero.webp"
       }
     }
   }

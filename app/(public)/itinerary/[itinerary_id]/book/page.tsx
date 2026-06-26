@@ -171,7 +171,7 @@ export default function BookingPage() {
               className="w-4 h-4 mt-0.5 accent-marigold"
             />
             <label htmlFor="consent" className="text-[10px] text-dusk-teal/80 leading-normal cursor-pointer select-none">
-              I consent to receiving customized travel itineraries on WhatsApp/Email. I understand that my travel DNA profile will be stored securely.
+              I consent to receiving customized travel itineraries on WhatsApp/Email. I understand that my travel style profile will be stored securely.
             </label>
           </div>
 

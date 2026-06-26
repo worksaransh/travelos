@@ -1,0 +1,49 @@
+city_id,city_name,related_city_id,related_city_name,similarity_score
+c26ec203-53b1-4b83-9958-90bcfb3a01de,Singapore,ea99d447-5524-437d-87fe-fb95036f6143,Dubai,0.813
+c26ec203-53b1-4b83-9958-90bcfb3a01de,Singapore,beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,0.772
+c26ec203-53b1-4b83-9958-90bcfb3a01de,Singapore,e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,0.739
+ea99d447-5524-437d-87fe-fb95036f6143,Dubai,314bdfff-84fd-4054-9549-ffad084044dc,Jaipur / Udaipur,0.846
+ea99d447-5524-437d-87fe-fb95036f6143,Dubai,c26ec203-53b1-4b83-9958-90bcfb3a01de,Singapore,0.813
+ea99d447-5524-437d-87fe-fb95036f6143,Dubai,e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,0.803
+52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,0.985
+52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,6057aad2-c3e7-4733-9c57-202eccfc52a6,Hanoi / Halong / Ho Chi Minh City,0.945
+52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.903
+504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.909
+504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),396e7fc0-3d4c-4301-9296-dc9b83d91632,Srinagar / Gulmarg / Pahalgam,0.902
+504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,0.874
+e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,0.903
+e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.866
+e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),0.807
+6057aad2-c3e7-4733-9c57-202eccfc52a6,Hanoi / Halong / Ho Chi Minh City,69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,0.967
+6057aad2-c3e7-4733-9c57-202eccfc52a6,Hanoi / Halong / Ho Chi Minh City,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.945
+6057aad2-c3e7-4733-9c57-202eccfc52a6,Hanoi / Halong / Ho Chi Minh City,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.823
+61ea5494-aa76-49be-a659-0b270db3d2cc,Colombo / Kandy / Galle,78eea878-3122-45ce-a2da-48cc70c873a5,Thimphu / Paro / Punakha,0.976
+61ea5494-aa76-49be-a659-0b270db3d2cc,Colombo / Kandy / Galle,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.854
+61ea5494-aa76-49be-a659-0b270db3d2cc,Colombo / Kandy / Galle,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.849
+beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,0.927
+beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,e58e1f8b-f08b-4c15-a474-bd781f996220,Male / Resort Atolls,0.903
+beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.868
+69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.985
+69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,6057aad2-c3e7-4733-9c57-202eccfc52a6,Hanoi / Halong / Ho Chi Minh City,0.967
+69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,1ea2ebfc-0e67-48a5-93e2-3875f5306c81,Manali / Kullu,0.912
+78eea878-3122-45ce-a2da-48cc70c873a5,Thimphu / Paro / Punakha,61ea5494-aa76-49be-a659-0b270db3d2cc,Colombo / Kandy / Galle,0.976
+78eea878-3122-45ce-a2da-48cc70c873a5,Thimphu / Paro / Punakha,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.842
+78eea878-3122-45ce-a2da-48cc70c873a5,Thimphu / Paro / Punakha,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.823
+7bdcd9b8-4a8e-49a0-862a-b1c9213dc30b,Goa,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.823
+7bdcd9b8-4a8e-49a0-862a-b1c9213dc30b,Goa,504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),0.806
+7bdcd9b8-4a8e-49a0-862a-b1c9213dc30b,Goa,69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,0.741
+48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,0.911
+48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),0.909
+48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.903
+1ea2ebfc-0e67-48a5-93e2-3875f5306c81,Manali / Kullu,396e7fc0-3d4c-4301-9296-dc9b83d91632,Srinagar / Gulmarg / Pahalgam,0.931
+1ea2ebfc-0e67-48a5-93e2-3875f5306c81,Manali / Kullu,69a879f7-3e51-46b2-b73c-54fdb82b6bf9,Port Louis / Grand Baie,0.912
+1ea2ebfc-0e67-48a5-93e2-3875f5306c81,Manali / Kullu,52b3a5dc-9eb7-4a77-b7b0-b567aee57404,Bangkok,0.892
+314bdfff-84fd-4054-9549-ffad084044dc,Jaipur / Udaipur,ea99d447-5524-437d-87fe-fb95036f6143,Dubai,0.846
+314bdfff-84fd-4054-9549-ffad084044dc,Jaipur / Udaipur,7bdcd9b8-4a8e-49a0-862a-b1c9213dc30b,Goa,0.709
+314bdfff-84fd-4054-9549-ffad084044dc,Jaipur / Udaipur,78eea878-3122-45ce-a2da-48cc70c873a5,Thimphu / Paro / Punakha,0.642
+d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,beb54bd5-465a-441b-acf6-b7d3f76e5a8e,Kuala Lumpur / Langkawi,0.927
+d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.911
+d35c15d9-03c1-4a83-8aef-e6bcbf1184a6,Port Blair / Havelock,504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),0.874
+396e7fc0-3d4c-4301-9296-dc9b83d91632,Srinagar / Gulmarg / Pahalgam,1ea2ebfc-0e67-48a5-93e2-3875f5306c81,Manali / Kullu,0.931
+396e7fc0-3d4c-4301-9296-dc9b83d91632,Srinagar / Gulmarg / Pahalgam,504d8137-8e84-4199-8978-b821f5213233,Bali (Denpasar),0.902
+396e7fc0-3d4c-4301-9296-dc9b83d91632,Srinagar / Gulmarg / Pahalgam,48a72c99-011c-46bb-96c0-e82aad486a29,Kochi / Munnar / Alleppey,0.885

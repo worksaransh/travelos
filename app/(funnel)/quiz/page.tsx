@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 import {
   anonymousSignUp,
   ensureUserAndProfile,
@@ -14,16 +15,35 @@ import {
   City,
   Country
 } from "@/lib/supabase";
+import { mergeAnonymousProfile } from "@/lib/auth";
+import {
+  Compass,
+  ArrowRight,
+  Sparkles,
+  MapPin,
+  CheckCircle,
+  HelpCircle,
+  RefreshCw,
+  Sliders,
+  Calendar,
+  User,
+  Users,
+  Smile,
+  ShieldCheck,
+  AlertCircle
+} from "lucide-react";
 
-// Question Card Component to capture constraints
-interface ResponseData {
-  occasion: string;
-  groupType: "solo" | "couple" | "family" | "group";
-  childAges: number[];
-  durationDays: number;
-  budgetType: "per_person" | "total";
-  budgetValue: number;
-  destinationSlug: string;
+interface FlowNode {
+  question_id: string;
+  tier: number;
+  question_text: string;
+  type: string;
+  options: string | null;
+  condition_field: string | null;
+  condition_op: string | null;
+  condition_value: string | null;
+  next_question_if_condition_true: string | null;
+  next_question_default: string | null;
 }
 
 function QuizContent() {
@@ -31,175 +51,374 @@ function QuizContent() {
   const searchParams = useSearchParams();
   const initialDestination = searchParams.get("destination") || "";
 
-  // Dest setup
+  // DB structures
   const [destinations, setDestinations] = useState<{ countries: Country[]; cities: City[] } | null>(null);
+  const [flowNodes, setFlowNodes] = useState<FlowNode[]>([]);
+  const [currentQuestionId, setCurrentQuestionId] = useState<string>("T0_Q1");
+  const [historyStack, setHistoryStack] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<Record<string, any>>({
+    T0_Q1: initialDestination ? "I Know My Destination" : "Not Sure Yet",
+    T0_Q2: initialDestination || "",
+  });
 
-  // States
-  const [step, setStep] = useState<"tier0" | "teaser" | "tier1" | "gate1" | "complete">("tier0");
-  const [whatsapp, setWhatsapp] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Loading & states
+  const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [activeQuestion, setActiveQuestion] = useState(0); // 0 to 4
+  const [successMsg, setSuccessMsg] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
 
-  // Answers State
-  const [answers, setAnswers] = useState<ResponseData>({
-    occasion: "Vacation",
-    groupType: "couple",
-    childAges: [],
-    durationDays: 7,
-    budgetType: "total",
-    budgetValue: 120000,
-    destinationSlug: initialDestination,
-  });
+  // Form states for account / lead capture gates
+  const [formName, setFormName] = useState("");
+  const [formEmail, setFormEmail] = useState("");
+  const [formPhone, setFormPhone] = useState("");
+  const [formPassword, setFormPassword] = useState("");
+  const [formContactTime, setFormContactTime] = useState("Afternoon (2 PM - 5 PM)");
+  const [consentWhatsApp, setConsentWhatsApp] = useState(true);
+  const [consentTerms, setConsentTerms] = useState(true);
 
-  // Slider values for Tier 1
-  const [sliders, setSliders] = useState<{ [key: string]: number }>({
+  // Split-number answers
+  const [adultsCount, setAdultsCount] = useState(2);
+  const [childrenCount, setChildrenCount] = useState(0);
+  const [childAges, setChildAges] = useState<number[]>([]);
+
+  // Sliders state (pre-populated)
+  const [sliders, setSliders] = useState<Record<string, number>>({
     Luxury: 50,
     Adventure: 50,
+    Relaxation: 50,
     Shopping: 50,
     Food: 50,
     Nature: 50,
     Nightlife: 50,
     Culture: 50,
+    Photography: 50,
+    "Local Experiences": 50,
   });
 
-  // Child ages counts
-  const [numChildren, setNumChildren] = useState(0);
-
+  // Local storage setup on mount
   useEffect(() => {
     getDestinations().then(setDestinations);
+    fetchFlowNodes();
   }, []);
 
-  // Update children ages array when count changes
-  useEffect(() => {
-    setAnswers((prev) => ({
-      ...prev,
-      childAges: Array(numChildren).fill(8), // default age 8
-    }));
-  }, [numChildren]);
-
-  const handleChildAgeChange = (index: number, age: number) => {
-    setAnswers((prev) => {
-      const newAges = [...prev.childAges];
-      newAges[index] = age;
-      return { ...prev, childAges: newAges };
-    });
-  };
-
-  // Step validation
-  const progressPercent = Math.round(((activeQuestion) / 4) * 100);
-
-  // Handle tier 0 submission
-  const handleTier0Submit = async () => {
-    setStep("teaser");
-    
-    // Perform anonymous signup and register profile
-    try {
-      const anonUid = await anonymousSignUp();
-      setUserId(anonUid);
-      const profId = await ensureUserAndProfile(anonUid);
-      setProfileId(profId);
-
-      // Submit each answer row
-      await submitQuestionnaireResponse(profId, 0, "occasion", answers.occasion);
-      await submitQuestionnaireResponse(profId, 0, "group_type", answers.groupType);
-      if (answers.groupType === "family") {
-        await submitQuestionnaireResponse(profId, 0, "child_ages", answers.childAges);
-      }
-      await submitQuestionnaireResponse(profId, 0, "duration_days", answers.durationDays);
-      await submitQuestionnaireResponse(profId, 0, "budget_type", answers.budgetType);
-      await submitQuestionnaireResponse(profId, 0, "budget_value", answers.budgetValue);
-      await submitQuestionnaireResponse(profId, 0, "destination_slug", answers.destinationSlug);
-    } catch (err) {
-      console.error("Failed storing questionnaire responses:", err);
-    }
-  };
-
-  // Handle tier 1 submission
-  const handleTier1Submit = async () => {
-    if (profileId) {
-      try {
-        await submitQuestionnaireResponse(profileId, 1, "personality_sliders", sliders);
-      } catch (err) {
-        console.error("Failed submitting Tier 1 sliders:", err);
-      }
-    }
-    setStep("gate1");
-  };
-
-  // Handle WhatsApp capture submit
-  const handleGate1Submit = async () => {
-    if (!whatsapp.trim()) {
-      setErrorMsg("Please enter a valid WhatsApp number.");
-      return;
-    }
-
+  const fetchFlowNodes = async () => {
     setLoading(true);
-    setErrorMsg("");
-
     try {
-      if (profileId) {
-        // 1. Submit lead details (RLS bypassed on insert)
-        await submitWhatsAppLead(profileId, whatsapp);
+      const { data, error } = await supabase
+        .from("questionnaire_flow")
+        .select("*")
+        .order("tier", { ascending: true });
 
-        // 2. Compute Travel DNA and generate Itinerary
-        const res = await generateItineraryForProfile(profileId, sliders, answers);
+      if (error) throw error;
 
-        if (res?.itineraryId) {
-          // 3. Redirect to /itinerary/[id]
-          router.push(`/itinerary/${res.itineraryId}`);
-          return;
-        }
+      if (data && data.length > 0) {
+        setFlowNodes(data);
+      } else {
+        // High fidelity fallback schema nodes
+        setFlowNodes([
+          { question_id: "T0_Q1", tier: 0, question_text: "Where would you like to travel?", type: "single_select", options: "Not Sure Yet|I Know My Destination", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q3" },
+          { question_id: "T0_Q2", tier: 0, question_text: "Which destination?", type: "destination_autocomplete", options: null, condition_field: "T0_Q1", condition_op: "equals", condition_value: "I Know My Destination", next_question_if_condition_true: "T0_Q3", next_question_default: null },
+          { question_id: "T0_Q3", tier: 0, question_text: "Domestic or International?", type: "single_select", options: "Domestic|International", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q4" },
+          { question_id: "T0_Q4", tier: 0, question_text: "Departure City", type: "city_autocomplete", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q5" },
+          { question_id: "T0_Q5", tier: 0, question_text: "Travel Month + Flexible Dates?", type: "month_picker_plus_toggle", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q6" },
+          { question_id: "T0_Q6", tier: 0, question_text: "Trip Duration (nights)", type: "number", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q7" },
+          { question_id: "T0_Q7", tier: 0, question_text: "How many travelers?", type: "number_split", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q8" },
+          { question_id: "T0_Q8", tier: 0, question_text: "Who are you traveling with?", type: "single_select", options: "Solo|Couple|Family|Friends|Corporate Group", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q8A" },
+          { question_id: "T0_Q8A", tier: 0, question_text: "Child ages", type: "multi_number", options: null, condition_field: "T0_Q8", condition_op: "equals", condition_value: "Family", next_question_if_condition_true: "T0_Q9", next_question_default: "T0_Q9" },
+          { question_id: "T0_Q9", tier: 0, question_text: "Total Budget", type: "single_select", options: "Under ₹50,000|₹50,000-₹1,00,000|₹1,00,000-₹2,00,000|₹2,00,000-₹5,00,000|₹5,00,000+", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q9A" },
+          { question_id: "T0_Q9A", tier: 0, question_text: "Per Person or Total Trip?", type: "single_select", options: "Per Person|Total Trip", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q10" },
+          { question_id: "T0_Q10", tier: 0, question_text: "Preferred Hotel Category", type: "single_select", options: "Budget|3 Star|4 Star|5 Star|Luxury", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T0_Q11" },
+          { question_id: "T0_Q11", tier: 0, question_text: "Quick Vibe Check: Luxury, Adventure, Relaxation", type: "slider_set", options: "Luxury|Adventure|Relaxation", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "TEASER" },
+          { question_id: "TEASER", tier: 0, question_text: "Teaser Screen Placeholder", type: "teaser_view", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T1_Q1_COUPLE" },
+          { question_id: "T1_Q1_SOLO", tier: 1, question_text: "Trip Occasion (Solo)", type: "single_select", options: "Vacation|Adventure|Religious|Birthday|Relaxation", condition_field: "T0_Q8", condition_op: "equals", condition_value: "Solo", next_question_if_condition_true: "T1_Q2", next_question_default: null },
+          { question_id: "T1_Q1_COUPLE", tier: 1, question_text: "Trip Occasion (Couple)", type: "single_select", options: "Vacation|Honeymoon|Anniversary|Adventure|Birthday|Relaxation|Romantic Escapade", condition_field: "T0_Q8", condition_op: "equals", condition_value: "Couple", next_question_if_condition_true: "T1_Q2", next_question_default: null },
+          { question_id: "T1_Q1_FAMILY", tier: 1, question_text: "Trip Occasion (Family)", type: "single_select", options: "Family Holiday|Vacation|Religious|Birthday|Relaxation", condition_field: "T0_Q8", condition_op: "equals", condition_value: "Family", next_question_if_condition_true: "T1_Q2", next_question_default: null },
+          { question_id: "T1_Q1_FRIENDS", tier: 1, question_text: "Trip Occasion (Friends)", type: "single_select", options: "Vacation|Adventure|Birthday|Relaxation|Religious", condition_field: "T0_Q8", condition_op: "equals", condition_value: "Friends", next_question_if_condition_true: "T1_Q2", next_question_default: null },
+          { question_id: "T1_Q1_CORPORATE", tier: 1, question_text: "Trip Occasion (Corporate)", type: "single_select", options: "Business", condition_field: "T0_Q8", condition_op: "equals", condition_value: "Corporate Group", next_question_if_condition_true: "T1_Q2", next_question_default: null },
+          { question_id: "T1_Q2", tier: 1, question_text: "Remaining Sliders: Shopping, Food, Nature, Nightlife, Culture, Photography, Local Experiences", type: "slider_set", options: "Shopping|Food|Nature|Nightlife|Culture|Photography|Local Experiences", condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "GATE1" },
+          { question_id: "GATE1", tier: 5, question_text: "Create account to save your results", type: "account_creation_form", options: null, condition_field: null, condition_op: null, condition_value: null, next_question_if_condition_true: null, next_question_default: "T2_Q1_INTL" }
+        ]);
       }
-      setErrorMsg("Failed to generate itinerary. Please try again.");
     } catch (err) {
-      console.error("Failed submitting Gate 1:", err);
-      setErrorMsg("Something went wrong. Please try again.");
+      console.warn("Failed fetching flows from Supabase. Falling back to local data blueprints.", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Rendering Functions
-  return (
-    <div className="flex flex-col min-h-screen items-center justify-center p-4 sm:p-8 bg-sand text-deep-charcoal font-sans transition-all duration-300">
-      <div className="w-full max-w-lg">
-        {step === "tier0" && (
-          <div
-            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6"
-            style={{
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--theme-shadow)",
-            }}
-          >
-            {/* Progress bar */}
-            <div className="w-full bg-sand/80 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-marigold h-full transition-all duration-300"
-                style={{ width: `${progressPercent || 10}%` }}
-              />
-            </div>
+  // Sync children count changes
+  useEffect(() => {
+    setChildAges(Array(childrenCount).fill(8));
+  }, [childrenCount]);
 
-            <div className="flex justify-between items-center text-xs font-mono text-dusk-teal">
-              <span>Question {activeQuestion + 1} of 5</span>
+  const handleChildAgeChange = (index: number, val: number) => {
+    const updated = [...childAges];
+    updated[index] = val;
+    setChildAges(updated);
+  };
+
+  // Condition evaluator
+  const evaluateCondition = (node: FlowNode): boolean => {
+    if (!node.condition_field) return true;
+    const value = answers[node.condition_field];
+
+    if (node.condition_op === "equals") {
+      return String(value) === String(node.condition_value);
+    }
+    if (node.condition_op === "gte") {
+      return Number(value) >= Number(node.condition_value);
+    }
+    return false;
+  };
+
+  // Determine next question ID based on condition evaluation
+  const determineNextQuestionId = (currentNode: FlowNode): string => {
+    if (currentNode.condition_field) {
+      if (evaluateCondition(currentNode)) {
+        return currentNode.next_question_if_condition_true || currentNode.next_question_default || "COMPLETE";
+      }
+    }
+    return currentNode.next_question_default || "COMPLETE";
+  };
+
+  // Progress calculator
+  const totalTier0Questions = flowNodes.filter((n) => n.tier === 0).length;
+  const currentCompletedCount = historyStack.length;
+  const progressPercent = Math.min(
+    100,
+    Math.round((currentCompletedCount / (totalTier0Questions + 2)) * 100)
+  );
+
+  const handleNext = async (currentVal?: any) => {
+    setErrorMsg("");
+    const currentNode = flowNodes.find((n) => n.question_id === currentQuestionId);
+    if (!currentNode) return;
+
+    // Apply values to state map
+    const finalVal = currentVal !== undefined ? currentVal : answers[currentQuestionId];
+    const newAnswers = { ...answers, [currentQuestionId]: finalVal };
+    setAnswers(newAnswers);
+
+    // Dynamic auto-save on database if profile exists
+    try {
+      let activeProfileId = profileId;
+      let activeUserId = userId;
+
+      if (!activeUserId) {
+        const anonUid = await anonymousSignUp();
+        activeUserId = anonUid;
+        setUserId(anonUid);
+      }
+      if (!activeProfileId) {
+        const profId = await ensureUserAndProfile(activeUserId);
+        activeProfileId = profId;
+        setProfileId(profId);
+      }
+
+      // Submit specific dynamic response
+      await submitQuestionnaireResponse(activeProfileId, currentNode.tier, currentQuestionId, finalVal);
+    } catch (err) {
+      console.warn("Background auto-save failed:", err);
+    }
+
+    // Determine target next question
+    let nextId = determineNextQuestionId(currentNode);
+
+    // Branching for TEASER checkpoint to determine occasion questions based on companion
+    if (currentQuestionId === "T0_Q11") {
+      nextId = "TEASER";
+    } else if (currentQuestionId === "TEASER") {
+      const companionType = answers["T0_Q8"] || "Couple";
+      if (companionType === "Solo") nextId = "T1_Q1_SOLO";
+      else if (companionType === "Couple") nextId = "T1_Q1_COUPLE";
+      else if (companionType === "Family") nextId = "T1_Q1_FAMILY";
+      else if (companionType === "Friends") nextId = "T1_Q1_FRIENDS";
+      else nextId = "T1_Q1_CORPORATE";
+    }
+
+    // Push past ID to history tracker and swap view
+    setHistoryStack([...historyStack, currentQuestionId]);
+    setCurrentQuestionId(nextId);
+  };
+
+  const handleBack = () => {
+    if (historyStack.length === 0) return;
+    const previous = [...historyStack];
+    const lastId = previous.pop()!;
+    setHistoryStack(previous);
+    setCurrentQuestionId(lastId);
+  };
+
+  // Secure / Create Account
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formEmail || !formPassword || !formName) {
+      setErrorMsg("Please fill in all required fields.");
+      return;
+    }
+    if (!consentTerms) {
+      setErrorMsg("Please accept terms of service to proceed.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const isDummy = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("127.0.0.1") || !supabase;
+
+      if (isDummy) {
+        setSuccessMsg("Mock Registration successful! Securing session data...");
+        // Compute DNA and generate mock Itinerary
+        const res = await generateItineraryForProfile(profileId || "mock-prof-id", sliders, answers);
+        setTimeout(() => {
+          router.push(`/itinerary/${res?.itineraryId || "mock-itinerary-1"}`);
+        }, 1500);
+      } else {
+        // Real signup with Supabase Auth
+        const { data, error } = await supabase.auth.signUp({
+          email: formEmail,
+          password: formPassword,
+          options: {
+            data: {
+              name: formName,
+              phone: formPhone
+            },
+            emailRedirectTo: `${window.location.origin}/api/auth/callback`,
+          }
+        });
+
+        if (error) throw error;
+
+        if (data.user) {
+          // Log consent in records
+          await supabase.from("consent_records").insert([
+            {
+              user_id: data.user.id,
+              consent_type: "signup_terms_and_privacy",
+              consent_version: "v1.0",
+              consent_given: true,
+            },
+            {
+              user_id: data.user.id,
+              consent_type: "whatsapp_updates",
+              consent_version: "v1.0",
+              consent_given: consentWhatsApp,
+            }
+          ]);
+
+          setSuccessMsg("Registration successful! Securing session and generating travel plan...");
+
+          // Merge anonymous profile
+          const cachedAnon = localStorage.getItem("journey_os_anon_user_id");
+          if (cachedAnon && cachedAnon !== data.user.id) {
+            await mergeAnonymousProfile(cachedAnon, data.user.id);
+          }
+
+          // Generate Itinerary
+          const res = await generateItineraryForProfile(profileId || "mock-prof", sliders, answers);
+          
+          setTimeout(() => {
+            router.push(`/itinerary/${res?.itineraryId}`);
+          }, 1500);
+        }
+      }
+    } catch (err: any) {
+      console.error("SignUp error during quiz:", err);
+      setErrorMsg(err.message || "Failed to register account.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Node lookup
+  const currentNode = flowNodes.find((n) => n.question_id === currentQuestionId);
+
+  if (loading && flowNodes.length === 0) {
+    return (
+      <div className="min-h-screen bg-sand flex flex-col justify-center items-center p-6" data-theme="consumer">
+        <RefreshCw className="w-9 h-9 text-marigold animate-spin mb-3" />
+        <p className="text-xs text-dusk-teal">Loading dynamic travel decoder steps...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen items-center justify-center p-4 sm:p-8 bg-sand/15 text-deep-charcoal font-sans" data-theme="consumer">
+      <div className="w-full max-w-lg">
+        
+        {/* Dynamic progress tracker (hidden on special screens) */}
+        {currentNode && currentNode.type !== "teaser_view" && currentNode.type !== "account_creation_form" && (
+          <div className="w-full bg-white/70 backdrop-blur-md p-5 border border-border/40 shadow-sm rounded-3xl mb-6 flex flex-col gap-3">
+            <div className="flex justify-between items-center text-[10px] font-bold uppercase text-dusk-teal/70 tracking-wider">
+              <span>Dynamic Questionnaire</span>
               <span>{progressPercent}% Complete</span>
             </div>
+            <div className="w-full bg-sand/65 h-2 rounded-full overflow-hidden border border-border/10">
+              <div
+                className="bg-marigold h-full transition-all duration-300 rounded-full"
+                style={{ width: `${progressPercent || 8}%` }}
+              />
+            </div>
+          </div>
+        )}
 
-            {/* Q0: Destination Selection */}
-            {activeQuestion === 0 && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                  Where would you like to travel?
+        {/* Dynamic question player */}
+        {currentNode && (
+          <div className="theme-surface bg-white/90 backdrop-blur-md p-6 sm:p-8 border border-border/40 shadow-xl rounded-3xl flex flex-col gap-6 animate-fade-in">
+            
+            {/* Display Node contents */}
+            {currentNode.type !== "teaser_view" && currentNode.type !== "account_creation_form" && (
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-clay-rose uppercase tracking-widest font-mono">
+                  Tier {currentNode.tier} Preference
+                </span>
+                <h2 className="text-xl sm:text-2xl font-display font-bold text-ink-indigo leading-tight">
+                  {currentNode.question_text}
                 </h2>
-                <div className="flex flex-col gap-2">
+              </div>
+            )}
+
+            {/* Inputs types renderer */}
+            
+            {/* TYPE 1: single_select */}
+            {currentNode.type === "single_select" && (
+              <div className="flex flex-col gap-2.5">
+                {(currentNode.options || "").split("|").map((opt) => {
+                  const isSelected = answers[currentQuestionId] === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => {
+                        setAnswers({ ...answers, [currentQuestionId]: opt });
+                        handleNext(opt);
+                      }}
+                      className={`w-full p-4 text-left rounded-2xl border text-xs font-semibold transition-all flex justify-between items-center ${
+                        isSelected
+                          ? "border-marigold bg-marigold/10 text-ink-indigo shadow-sm"
+                          : "border-border/60 hover:border-marigold bg-white/50 text-dusk-teal"
+                      }`}
+                    >
+                      <span>{opt}</span>
+                      <ArrowRight className={`w-3.5 h-3.5 ${isSelected ? "text-marigold" : "text-border/80"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TYPE 2: destination_autocomplete */}
+            {currentNode.type === "destination_autocomplete" && (
+              <div className="space-y-3">
+                <div className="relative">
                   <select
-                    value={answers.destinationSlug}
-                    onChange={(e) => setAnswers(prev => ({ ...prev, destinationSlug: e.target.value }))}
-                    className="p-3 border border-border rounded-xl bg-transparent text-sm focus:ring-1 focus:ring-marigold"
+                    value={answers[currentQuestionId] || ""}
+                    onChange={(e) => setAnswers({ ...answers, [currentQuestionId]: e.target.value })}
+                    className="w-full p-3.5 border border-border rounded-xl bg-white text-xs text-ink-indigo font-semibold focus:outline-none focus:border-marigold"
                   >
-                    <option value="">Let AI suggest (Undecided)</option>
+                    <option value="">Let AI suggest (Singapore default)</option>
                     {destinations?.cities.map((city) => (
                       <option key={city.id} value={city.name.toLowerCase()}>
                         {city.name}
@@ -207,437 +426,387 @@ function QuizContent() {
                     ))}
                   </select>
                 </div>
+                <p className="text-[10px] text-dusk-teal/80">
+                  Select a candidate location to load and overlay your travel DNA scores dynamically.
+                </p>
               </div>
             )}
 
-            {/* Q1: Group Type & Companion */}
-            {activeQuestion === 1 && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                  Who is traveling with you?
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {(["solo", "couple", "family", "group"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => {
-                        const defaultOccasions = {
-                          solo: "Leisure",
-                          couple: "Honeymoon",
-                          family: "Family Vacation",
-                          group: "Leisure"
-                        };
-                        setAnswers(prev => ({
-                          ...prev,
-                          groupType: t,
-                          occasion: defaultOccasions[t]
-                        }));
-                      }}
-                      className={`p-4 rounded-xl border text-sm capitalize font-medium transition-all ${
-                        answers.groupType === t
-                          ? "border-marigold bg-marigold/10 text-marigold"
-                          : "border-border/60 hover:border-marigold"
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+            {/* TYPE 3: city_autocomplete */}
+            {currentNode.type === "city_autocomplete" && (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="e.g. Mumbai, New Delhi, Singapore"
+                  value={answers[currentQuestionId] || ""}
+                  onChange={(e) => setAnswers({ ...answers, [currentQuestionId]: e.target.value })}
+                  className="w-full p-3.5 border border-border rounded-xl bg-white text-xs text-ink-indigo font-semibold focus:outline-none focus:border-marigold"
+                />
+              </div>
+            )}
 
-                {/* Conditional Family details */}
-                {answers.groupType === "family" && (
-                  <div className="flex flex-col gap-3 bg-sand/30 p-4 rounded-xl mt-2">
-                    <label className="text-xs font-semibold text-dusk-teal">Number of Children</label>
+            {/* TYPE 4: month_picker_plus_toggle */}
+            {currentNode.type === "month_picker_plus_toggle" && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-2.5">
+                  {["July 2026", "August 2026", "September 2026", "October 2026", "November 2026", "December 2026"].map((m) => {
+                    const isSelected = answers[currentQuestionId]?.month === m;
+                    return (
+                      <button
+                        key={m}
+                        onClick={() =>
+                          setAnswers({
+                            ...answers,
+                            [currentQuestionId]: { ...answers[currentQuestionId], month: m }
+                          })
+                        }
+                        className={`p-3 rounded-xl border text-[11px] font-semibold text-center transition-all ${
+                          isSelected
+                            ? "border-marigold bg-marigold/10 text-ink-indigo shadow-sm"
+                            : "border-border/60 hover:border-marigold bg-white/50 text-dusk-teal"
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="flex items-center gap-2.5 cursor-pointer pt-2">
+                  <input
+                    type="checkbox"
+                    checked={answers[currentQuestionId]?.flexible ?? true}
+                    onChange={(e) =>
+                      setAnswers({
+                        ...answers,
+                        [currentQuestionId]: { ...answers[currentQuestionId], flexible: e.target.checked }
+                      })
+                    }
+                    className="accent-marigold"
+                  />
+                  <span className="text-xs text-dusk-teal font-medium">My travel dates are flexible (+/- 5 days)</span>
+                </label>
+              </div>
+            )}
+
+            {/* TYPE 5: number */}
+            {currentNode.type === "number" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center gap-5">
+                  <button
+                    onClick={() => {
+                      const cur = Number(answers[currentQuestionId] || 7);
+                      setAnswers({ ...answers, [currentQuestionId]: Math.max(1, cur - 1) });
+                    }}
+                    className="w-11 h-11 rounded-full border border-border flex items-center justify-center font-bold text-lg bg-white/50 text-ink-indigo hover:border-marigold"
+                  >
+                    -
+                  </button>
+                  <span className="text-3xl font-mono font-bold text-marigold w-24 text-center">
+                    {answers[currentQuestionId] || 7}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const cur = Number(answers[currentQuestionId] || 7);
+                      setAnswers({ ...answers, [currentQuestionId]: Math.min(30, cur + 1) });
+                    }}
+                    className="w-11 h-11 rounded-full border border-border flex items-center justify-center font-bold text-lg bg-white/50 text-ink-indigo hover:border-marigold"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-center text-[10px] text-dusk-teal/80">Nights stay</p>
+              </div>
+            )}
+
+            {/* TYPE 6: number_split */}
+            {currentNode.type === "number_split" && (
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex-1 space-y-1 text-left">
+                    <label className="text-[10px] font-bold uppercase text-ink-indigo">Adults</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={adultsCount}
+                      onChange={(e) => setAdultsCount(Math.max(1, parseInt(e.target.value) || 1))}
+                      className="w-full p-3 border border-border rounded-xl bg-white text-xs font-semibold text-ink-indigo"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1 text-left">
+                    <label className="text-[10px] font-bold uppercase text-ink-indigo">Children</label>
                     <input
                       type="number"
                       min={0}
-                      max={10}
-                      value={numChildren}
-                      onChange={(e) => setNumChildren(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="p-2 border border-border rounded bg-white text-sm"
+                      max={8}
+                      value={childrenCount}
+                      onChange={(e) => setChildrenCount(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-full p-3 border border-border rounded-xl bg-white text-xs font-semibold text-ink-indigo"
                     />
+                  </div>
+                </div>
+              </div>
+            )}
 
-                    {numChildren > 0 && (
-                      <div className="flex flex-col gap-2 mt-2">
-                        <label className="text-xs font-semibold text-dusk-teal">Ages of Children</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {answers.childAges.map((age, idx) => (
-                            <input
-                              key={idx}
-                              type="number"
-                              min={0}
-                              max={18}
-                              value={age}
-                              onChange={(e) => handleChildAgeChange(idx, parseInt(e.target.value) || 0)}
-                              placeholder={`Child ${idx + 1}`}
-                              className="p-2 border border-border rounded bg-white text-xs text-center"
-                            />
-                          ))}
+            {/* TYPE 7: multi_number (Child ages) */}
+            {currentNode.type === "multi_number" && (
+              <div className="space-y-4">
+                {childrenCount > 0 ? (
+                  <div className="space-y-3">
+                    <label className="text-xs font-semibold text-dusk-teal">Specify age for each child:</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {childAges.map((age, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <span className="block text-[9px] uppercase font-bold text-dusk-teal/70">Child {idx + 1}</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={17}
+                            value={age}
+                            onChange={(e) => handleChildAgeChange(idx, Math.max(0, parseInt(e.target.value) || 0))}
+                            className="p-2 border border-border rounded-xl text-center bg-white text-xs font-mono font-bold text-ink-indigo"
+                          />
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-xs text-dusk-teal bg-sand/30 rounded-2xl border border-border/20">
+                    No children selected in party count. Please click Next to bypass.
                   </div>
                 )}
               </div>
             )}
 
-            {/* Q2: Occasion */}
-            {activeQuestion === 2 && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                  What is the occasion?
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {(
-                    answers.groupType === "solo"
-                      ? ["Birthday", "Business", "Leisure", "Solo Adventure"]
-                      : answers.groupType === "couple"
-                      ? ["Honeymoon", "Anniversary", "Birthday", "Leisure", "Romantic Escapade"]
-                      : answers.groupType === "family"
-                      ? ["Family Vacation", "Birthday", "Leisure", "Kid's Celebration"]
-                      : ["Birthday", "Group Retreat", "Business", "Leisure", "Reunion"]
-                  ).map((occ) => {
-                    const isSelected = answers.occasion === occ;
-                    return (
-                      <button
-                        key={occ}
-                        onClick={() => setAnswers(prev => ({ ...prev, occasion: occ }))}
-                        className={`p-4 rounded-xl border text-sm transition-all ${
-                          isSelected
-                            ? "border-marigold bg-marigold/10 text-marigold"
-                            : "border-border/60 hover:border-marigold"
-                        }`}
-                      >
-                        {occ}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* TYPE 8: slider_set */}
+            {currentNode.type === "slider_set" && (
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+                {(currentNode.options || "").split("|").map((dim) => (
+                  <div key={dim} className="space-y-1.5 text-left">
+                    <div className="flex justify-between text-xs font-semibold text-ink-indigo">
+                      <span>{dim}</span>
+                      <span className="font-mono text-marigold">{sliders[dim] || 50}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={sliders[dim] || 50}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setSliders({ ...sliders, [dim]: val });
+                        setAnswers({ ...answers, [currentQuestionId]: { ...answers[currentQuestionId], [dim]: val } });
+                      }}
+                      className="w-full accent-marigold"
+                    />
+                  </div>
+                ))}
               </div>
             )}
 
-            {/* Q3: Trip Duration */}
-            {activeQuestion === 3 && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                  How long will you stay?
-                </h2>
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    {[3, 5, 7, 10, 14, 21].map((d) => (
-                      <button
-                        key={d}
-                        onClick={() => setAnswers(prev => ({ ...prev, durationDays: d }))}
-                        className={`p-3 rounded-xl border text-sm font-mono ${
-                          answers.durationDays === d
-                            ? "border-marigold bg-marigold/10 text-marigold"
-                            : "border-border/60 hover:border-marigold"
-                        }`}
-                      >
-                        {d} Days
-                      </button>
-                    ))}
+            {/* TYPE 9: teaser_view */}
+            {currentNode.type === "teaser_view" && (
+              <div className="text-center space-y-6">
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-clay-rose bg-clay-rose/10 border border-clay-rose/15 px-3 py-1 rounded-full uppercase tracking-widest font-mono">
+                    Travel preferences locked
+                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-display font-bold text-ink-indigo">
+                    Analyzing Your Custom Itinerary Match...
+                  </h2>
+                </div>
+
+                <div className="p-4.5 rounded-2xl bg-sand/35 text-left text-xs leading-relaxed border border-border/25 flex flex-col gap-2.5 font-semibold text-dusk-teal">
+                  <div className="flex justify-between">
+                    <span>Destination Candidate:</span>
+                    <span className="text-ink-indigo capitalize">{answers["T0_Q2"] || "Singapore (Recommended)"}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-dusk-teal/80 px-1 mt-2">
-                    <span>Custom Days:</span>
+                  <div className="flex justify-between">
+                    <span>Selected Companion:</span>
+                    <span className="text-ink-indigo">{answers["T0_Q8"] || "Couple"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Trip Duration:</span>
+                    <span className="text-ink-indigo font-mono">{answers["T0_Q6"] || 7} Nights</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Selected Budget:</span>
+                    <span className="text-ink-indigo font-mono">{answers["T0_Q9"] || "₹1,00,000-₹2,00,000"}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 text-left">
+                  <h4 className="text-[10px] font-bold uppercase text-marigold tracking-widest font-mono">
+                    AI Recommended Experience Snaps:
+                  </h4>
+                  <div className="flex flex-col gap-2">
+                    <div className="p-3 bg-white border border-border/30 rounded-xl flex items-center justify-between shadow-sm">
+                      <span className="font-semibold text-xs text-ink-indigo">Marina Bay Sands Infinity Deck</span>
+                      <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">98% Fit</span>
+                    </div>
+                    <div className="p-3 bg-white border border-border/30 rounded-xl flex items-center justify-between shadow-sm">
+                      <span className="font-semibold text-xs text-ink-indigo">Gardens by the Bay Light Show</span>
+                      <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-bold">92% Fit</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => handleNext({ analyzed: true })}
+                  className="bg-marigold hover:bg-marigold/95 text-ink-indigo font-bold py-4 w-full rounded-xl shadow-md transition-all text-xs border border-marigold mt-2"
+                >
+                  Sharpen Matches (Tier 1 Details)
+                </Button>
+              </div>
+            )}
+
+            {/* TYPE 10: account_creation_form (GATE 1) */}
+            {currentNode.type === "account_creation_form" && (
+              <form onSubmit={handleSignUpSubmit} className="space-y-4 text-left">
+                <div className="space-y-1 text-center mb-4">
+                  <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
+                    Account Lock-In
+                  </span>
+                  <h2 className="text-2xl font-display font-bold text-ink-indigo">
+                    Save Your Travel Profile
+                  </h2>
+                  <p className="text-xs text-dusk-teal">
+                    Create a free account to secure your travel DNA match details.
+                  </p>
+                </div>
+
+                {errorMsg && (
+                  <div className="p-3 text-xs rounded-xl bg-clay-rose/10 border border-clay-rose/20 text-clay-rose font-semibold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div className="p-3 text-xs rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 font-semibold flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 shrink-0" />
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-ink-indigo mb-0.5 tracking-wider">
+                      Full Name *
+                    </label>
                     <input
-                      type="number"
-                      value={answers.durationDays}
-                      onChange={(e) => setAnswers(prev => ({ ...prev, durationDays: Math.max(1, parseInt(e.target.value) || 1) }))}
-                      className="p-1.5 border border-border rounded text-center w-20 font-mono"
+                      type="text"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 bg-sand/20 border border-border/30 rounded-xl focus:outline-none focus:border-marigold"
+                      placeholder="John Doe"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-ink-indigo mb-0.5 tracking-wider">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 bg-sand/20 border border-border/30 rounded-xl focus:outline-none focus:border-marigold"
+                      placeholder="john@example.com"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-ink-indigo mb-0.5 tracking-wider">
+                      WhatsApp Phone Number (For updates)
+                    </label>
+                    <input
+                      type="tel"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 bg-sand/20 border border-border/30 rounded-xl focus:outline-none focus:border-marigold"
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] uppercase font-bold text-ink-indigo mb-0.5 tracking-wider">
+                      Password *
+                    </label>
+                    <input
+                      type="password"
+                      value={formPassword}
+                      onChange={(e) => setFormPassword(e.target.value)}
+                      className="w-full text-xs px-3.5 py-2.5 bg-sand/20 border border-border/30 rounded-xl focus:outline-none focus:border-marigold"
+                      placeholder="Min. 8 characters"
+                      minLength={8}
+                      required
                     />
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Q4: Budget selection */}
-            {activeQuestion === 4 && (
-              <div className="flex flex-col gap-4">
-                <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                  What is your travel budget?
-                </h2>
-                
-                {/* Budget Type Toggle */}
-                <div className="flex rounded-xl bg-sand/50 p-1 border border-border">
-                  <button
-                    onClick={() => setAnswers(prev => ({ ...prev, budgetType: "per_person" }))}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      answers.budgetType === "per_person" ? "bg-white text-ink-indigo shadow-sm" : "text-dusk-teal"
-                    }`}
-                  >
-                    Per Person
-                  </button>
-                  <button
-                    onClick={() => setAnswers(prev => ({ ...prev, budgetType: "total" }))}
-                    className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      answers.budgetType === "total" ? "bg-white text-ink-indigo shadow-sm" : "text-dusk-teal"
-                    }`}
-                  >
-                    Total Budget
-                  </button>
-                </div>
-
-                <div className="flex flex-col gap-3 mt-2">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-xs text-dusk-teal uppercase tracking-wider font-mono">Amount:</span>
-                    <span className="text-2xl font-mono font-bold text-marigold">
-                      {answers.budgetType === "per_person" ? "₹" : "Total: ₹"}{answers.budgetValue.toLocaleString("en-IN")}
+                <div className="space-y-2 pt-2">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentWhatsApp}
+                      onChange={(e) => setConsentWhatsApp(e.target.checked)}
+                      className="mt-0.5 accent-marigold"
+                    />
+                    <span className="text-[10px] text-dusk-teal leading-normal font-medium">
+                      I consent to receive travel updates and curated itinerary packages on WhatsApp.
                     </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={20000}
-                    max={500000}
-                    step={10000}
-                    value={answers.budgetValue}
-                    onChange={(e) => setAnswers(prev => ({ ...prev, budgetValue: parseInt(e.target.value) }))}
-                    className="w-full accent-marigold"
-                  />
-                  <div className="flex justify-between text-[10px] text-dusk-teal/80 font-mono">
-                    <span>₹20,000</span>
-                    <span>₹2,50,000</span>
-                    <span>₹5,000,000+</span>
-                  </div>
-                </div>
-              </div>
-            )}
+                  </label>
 
-            {/* Navigation buttons */}
-            <div className="flex justify-between mt-4">
-              <Button
-                variant="ghost"
-                disabled={activeQuestion === 0}
-                onClick={() => setActiveQuestion(prev => prev - 1)}
-                className="text-dusk-teal"
-              >
-                Back
-              </Button>
-              {activeQuestion < 4 ? (
-                <button
-                  onClick={async () => {
-                    setActiveQuestion(prev => prev + 1);
-                    try {
-                      const anonUid = await anonymousSignUp();
-                      const profId = await ensureUserAndProfile(anonUid);
-                      setUserId(anonUid);
-                      setProfileId(profId);
-                      
-                      if (activeQuestion === 0) {
-                        await submitQuestionnaireResponse(profId, 0, "destination_slug", answers.destinationSlug);
-                      } else if (activeQuestion === 1) {
-                        await submitQuestionnaireResponse(profId, 0, "group_type", answers.groupType);
-                        if (answers.groupType === "family") {
-                          await submitQuestionnaireResponse(profId, 0, "child_ages", answers.childAges);
-                        }
-                      } else if (activeQuestion === 2) {
-                        await submitQuestionnaireResponse(profId, 0, "occasion", answers.occasion);
-                      } else if (activeQuestion === 3) {
-                        await submitQuestionnaireResponse(profId, 0, "duration_days", answers.durationDays);
-                      }
-                    } catch (err) {
-                      console.warn("Auto-save intermediate answers failed:", err);
-                    }
-                  }}
-                  className="bg-ink-indigo hover:bg-ink-indigo/90 text-white px-6 py-2 rounded-lg font-semibold text-xs transition"
-                >
-                  Next
-                </button>
-              ) : (
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentTerms}
+                      onChange={(e) => setConsentTerms(e.target.checked)}
+                      className="mt-0.5 accent-marigold"
+                      required
+                    />
+                    <span className="text-[10px] text-dusk-teal leading-normal font-medium">
+                      I accept the terms of service and data privacy guidelines. *
+                    </span>
+                  </label>
+                </div>
+
                 <Button
-                  onClick={handleTier0Submit}
-                  className="bg-marigold hover:bg-marigold/90 text-white font-semibold px-8"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-marigold hover:bg-marigold/95 text-white font-bold rounded-xl mt-2 text-xs shadow-md transition"
                 >
-                  Submit & Preview Match
+                  {loading ? "Registering & Processing matches..." : "Generate & View My Travel Itinerary"}
                 </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* D3 Teaser Itinerary Screen */}
-        {step === "teaser" && (
-          <div
-            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6 text-center animate-fade-in"
-            style={{
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--theme-shadow)",
-            }}
-          >
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
-                Decoded Travel Preferences
-              </span>
-              <h2 className="text-3xl font-display font-bold text-ink-indigo">
-                Analyzing Your Signature Match...
-              </h2>
-            </div>
-
-            <div className="my-6 p-4 rounded-xl bg-sand/30 text-left text-sm leading-relaxed border border-border/20 flex flex-col gap-3 font-mono">
-              <div>
-                <strong>Destination:</strong> {answers.destinationSlug || "Singapore (Recommended)"}
-              </div>
-              <div>
-                <strong>Occasion:</strong> {answers.occasion}
-              </div>
-              <div>
-                <strong>Party Size:</strong> {answers.groupType === "family" ? `Family (${answers.childAges.length} children)` : answers.groupType}
-              </div>
-              <div>
-                <strong>Budget:</strong> {answers.budgetType.replace("_", " ")}: ₹{answers.budgetValue.toLocaleString("en-IN")}
-              </div>
-            </div>
-
-            {/* Simulated AI matches */}
-            <div className="flex flex-col gap-3 text-left">
-              <h4 className="text-xs font-bold uppercase text-marigold tracking-widest font-mono">
-                Top Decoded Candidates:
-              </h4>
-              <div className="flex flex-col gap-2">
-                <div className="p-3 bg-white border border-border/30 rounded-xl flex items-center justify-between">
-                  <span className="font-semibold text-xs text-ink-indigo">Marina Bay Sands SkyPark (Luxury)</span>
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">98% Match</span>
-                </div>
-                <div className="p-3 bg-white border border-border/30 rounded-xl flex items-center justify-between">
-                  <span className="font-semibold text-xs text-ink-indigo">Gardens by the Bay (Nature & Photography)</span>
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">92% Match</span>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={() => setStep("tier1")}
-              className="bg-marigold hover:bg-marigold/90 text-white font-semibold py-4 w-full mt-4"
-            >
-              Sharpen Your Match (Tier 1)
-            </Button>
-          </div>
-        )}
-
-        {/* D4 Tier 1 sliders screen */}
-        {step === "tier1" && (
-          <div
-            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6"
-            style={{
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--theme-shadow)",
-            }}
-          >
-            <div className="flex flex-col gap-1 text-center">
-              <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
-                Stage 2 (Tier 1)
-              </span>
-              <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                Sharpen Your Travel Preferences
-              </h2>
-              <p className="text-xs text-dusk-teal">
-                Drag the sliders to indicate which dimensions you prioritize for this trip.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-5 mt-4">
-              {Object.keys(sliders).map((dim) => (
-                <div key={dim} className="flex flex-col gap-2">
-                  <div className="flex justify-between text-xs font-semibold text-ink-indigo">
-                    <span>{dim}</span>
-                    <span className="font-mono text-marigold">{sliders[dim]}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={sliders[dim]}
-                    onChange={(e) => setSliders(prev => ({ ...prev, [dim]: parseInt(e.target.value) }))}
-                    className="w-full accent-marigold"
-                  />
-                </div>
-              ))}
-            </div>
-
-            <Button
-              onClick={handleTier1Submit}
-              className="bg-ink-indigo hover:bg-ink-indigo/90 text-white py-4 w-full mt-4"
-            >
-              Confirm DNA Profile
-            </Button>
-          </div>
-        )}
-
-        {step === "gate1" && (
-          <div
-            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6 text-center animate-fade-in"
-            style={{
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--theme-shadow)",
-            }}
-          >
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold text-clay-rose uppercase tracking-widest font-mono">
-                Final Step
-              </span>
-              <h2 className="text-2xl font-display font-bold text-ink-indigo">
-                Get Your Curated Itinerary
-              </h2>
-              <p className="text-xs text-dusk-teal">
-                We'll text you the complete travel plan on WhatsApp.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 text-left">
-              <label htmlFor="whatsapp" className="text-xs font-semibold text-dusk-teal">
-                WhatsApp Number
-              </label>
-              <input
-                id="whatsapp"
-                type="tel"
-                placeholder="e.g. +91 98765 43210"
-                value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
-                className="p-3 border border-border rounded-xl bg-transparent text-sm focus:ring-1 focus:ring-marigold outline-none"
-              />
-              <span className="text-[10px] text-dusk-teal/70 leading-normal">
-                By clicking below, you consent to receive curated travel plans and marketing messages from JourneyOS.
-              </span>
-            </div>
-
-            {errorMsg && (
-              <span className="text-xs text-rose-500 text-left font-semibold">
-                {errorMsg}
-              </span>
+              </form>
             )}
 
-            <Button
-              onClick={handleGate1Submit}
-              disabled={loading}
-              className="bg-marigold hover:bg-marigold/90 text-white font-semibold py-4 w-full mt-2"
-            >
-              {loading ? "Generating Full Itinerary..." : "Send me my full itinerary"}
-            </Button>
+            {/* Standard buttons layout (except form inputs that handle next automatically) */}
+            {currentNode.type !== "single_select" && currentNode.type !== "teaser_view" && currentNode.type !== "account_creation_form" && (
+              <div className="flex gap-3 mt-4 border-t border-border/10 pt-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBack}
+                  disabled={historyStack.length === 0}
+                  className="flex-1 py-3 text-xs border border-border/40 rounded-xl text-dusk-teal"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => handleNext()}
+                  className="flex-1 py-3 bg-ink-indigo hover:bg-ink-indigo/95 text-white text-xs font-bold rounded-xl shadow-sm"
+                >
+                  Next Question
+                </Button>
+              </div>
+            )}
+
           </div>
         )}
 
-        {step === "complete" && (
-          <div
-            className="theme-surface bg-white p-8 border border-border/40 flex flex-col gap-6 text-center"
-            style={{
-              borderRadius: "var(--radius)",
-              boxShadow: "var(--theme-shadow)",
-            }}
-          >
-            <h2 className="text-3xl font-display font-bold text-ink-indigo">DNA Profile Decoded!</h2>
-            <p className="text-dusk-teal text-sm leading-relaxed">
-              Congratulations! Your subconscious travel signature has been successfully decoded. It has been synced securely to your anonymous session.
-            </p>
-            <div className="p-4 bg-sand/30 rounded-xl border border-border/20 font-mono text-xs text-left leading-relaxed flex flex-col gap-2">
-              <div><strong>User Session ID:</strong> {userId}</div>
-              <div><strong>DNA Profile ID:</strong> {profileId}</div>
-              <div><strong>Active Dimensions:</strong> {Object.entries(sliders).filter(([_, val]) => val > 60).map(([key]) => key).join(", ") || "Balanced"}</div>
-            </div>
-            <Link href="/">
-              <Button className="bg-ink-indigo text-white py-3 w-full">Return to Dashboard</Button>
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -645,7 +814,7 @@ function QuizContent() {
 
 export default function QuizPage() {
   return (
-    <Suspense fallback={<div>Loading quiz components...</div>}>
+    <Suspense fallback={<div className="p-8 text-xs text-dusk-teal text-center">Loading travel quiz...</div>}>
       <QuizContent />
     </Suspense>
   );

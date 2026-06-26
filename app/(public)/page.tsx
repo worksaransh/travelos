@@ -55,7 +55,7 @@ export default function Homepage() {
         <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center gap-6">
           <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-marigold px-3 py-1 rounded-full bg-marigold/15 border border-marigold/20 font-mono">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>AI-Driven Custom Travel decoders</span>
+            <span>Bespoke Handcrafted Travel Journeys</span>
           </span>
           
           <h1 className="text-4xl sm:text-6xl font-display font-bold tracking-tight max-w-3xl leading-none">
@@ -71,7 +71,7 @@ export default function Homepage() {
           <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full sm:w-auto justify-center">
             <Link href="/quiz">
               <Button className="w-full sm:w-auto bg-marigold hover:bg-marigold/90 text-ink-indigo hover:text-ink-indigo font-bold py-6.5 px-8 rounded-xl shadow-lg transition-all text-base border border-marigold">
-                Decode Your Travel DNA
+                Find Your Perfect Travel Style
               </Button>
             </Link>
             <Link href="/destinations">

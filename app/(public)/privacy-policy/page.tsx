@@ -10,7 +10,7 @@ export default function PrivacyPolicyPage() {
           [PLACEHOLDER — NEEDS LEGAL REVIEW]
         </span>
         <p className="text-sm text-deep-charcoal leading-relaxed">
-          This document describes how we process user data for Travel DNA profiling and itinerary generation. We securely capture explicitly submitted questionnaires, consent flags, and optional implicit event signals.
+          This document describes how we process user data for Travel Style profiling and itinerary generation. We securely capture explicitly submitted questionnaires, consent flags, and optional implicit event signals.
         </p>
         <p className="text-xs text-dusk-teal">
           Last revised: June 2026.

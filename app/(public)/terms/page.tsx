@@ -10,7 +10,7 @@ export default function TermsPage() {
           [PLACEHOLDER — NEEDS LEGAL REVIEW]
         </span>
         <p className="text-sm text-deep-charcoal leading-relaxed">
-          By accessing this site or filling out the Travel DNA questionnaire, you agree that your inputs will be processed by our scoring engine. Agent overrides, pricing bands, and booking actions are governed by specific carrier regulations.
+          By accessing this site or filling out the Travel Style questionnaire, you agree that your inputs will be processed by our scoring engine. Agent overrides, pricing bands, and booking actions are governed by specific carrier regulations.
         </p>
         <Link href="/">
           <Button variant="outline">Back to Home</Button>

@@ -151,7 +151,7 @@ export default function ItineraryHubPage() {
           <span className="text-3xl">⚠️</span>
           <h2 className="text-xl font-bold text-ink-indigo">Could Not Retrieve Itinerary</h2>
           <p className="text-xs text-dusk-teal leading-relaxed">
-            {error || "We encountered an issue loading your custom plan. Please retake the travel DNA quiz."}
+            {error || "We encountered an issue loading your custom plan. Please retake the travel style quiz."}
           </p>
           <Link href="/quiz">
             <Button className="bg-ink-indigo text-white py-3 w-full">Start New Quiz</Button>
@@ -174,7 +174,7 @@ export default function ItineraryHubPage() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=1000')] opacity-20 bg-cover bg-center"></div>
         <div className="relative z-10 max-w-2xl mx-auto flex flex-col gap-2">
           <span className="text-xs font-bold text-marigold tracking-widest font-mono uppercase">
-            Curated For: {personaName}
+            Curated For: Your Travel Style
           </span>
           <h1 className="text-3xl sm:text-4xl font-display font-bold">
             {cityName}, {countryName}

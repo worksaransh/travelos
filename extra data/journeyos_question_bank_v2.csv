@@ -1,0 +1,61 @@
+question_id,category,subcategory,question_text_conversational,type,conditional_logic,weight,impact_on_recommendations
+B01,Basic,Destination Status,"Got a place in mind, or should we surprise you?",single_select,,1.0,Routes to destination recommendation vs known-destination flow
+B02,Basic,Trip Type,"Sticking close to home, or going further afield?",single_select,,1.0,Sets domestic/international branching for Tier 2 questions
+B03,Basic,Departure,Where are you setting off from?,city_autocomplete,,1.0,Drives flight_routes matching and cost/duration filtering
+B04,Basic,Timing,When's this trip happening?,month_picker,,1.0,"Seasonal/weather matching, festival advisory checks"
+B05,Basic,Flexibility,"Any specific dates you're locked into, or is there wiggle room?",toggle,,0.6,Affects pricing-tier and availability messaging
+B06,Basic,Duration,How many days do you actually have?,number,,1.0,Filters packages by duration_nights
+B07,Basic,Group Size,"Just you, or is this a crew?",number_split,,1.0,Drives per-person vs total pricing logic
+B08,Basic,Group Type,Who's coming with you on this one?,single_select,,1.0,Drives conditional occasion options and persona hard-overrides
+B09,Basic,Group Type Detail,Kids in the mix? What ages?,multi_number,group_type==Family,0.8,Filters experiences by age_suitability
+B10,Basic,Occasion,What's the story behind this trip?,single_select (conditional options),,1.0,Drives persona hard-override rules
+B11,Basic,Budget,"If this trip becomes unforgettable, how much are you comfortable spending?",single_select,,1.0,Primary budget-band filter
+B12,Basic,Budget Scope,"Is that for everyone, or just you?",single_select,,0.7,Per-person vs total trip budget normalization
+B13,Basic,Stay Style,"When you picture where you're staying, what's the vibe?",visual_card_select,,0.9,"Hotel category preference, feeds Luxury dimension score"
+B14,Basic,Repeat Traveler,"Have you done a trip like this before, or is this a first?",single_select,,0.4,"Confidence-score weighting, novelty-seeking signal"
+B15,Basic,Trip Stakes,On a scale of 'nice to have' to 'this has to be perfect' - where does this trip sit?,slider,,0.6,Affects how aggressively upsells/hidden-gems get surfaced
+P01,Personality,Luxury (depth),"When you say luxury, is it more 'quiet private villa' or 'rooftop bar everyone's watching'?",single_select,luxury_score>=60,0.7,Refines Luxury dimension into a quiet/social sub-axis for hotel & experience matching
+P02,Personality,Adventure (depth),"Adrenaline rush, or just want to feel like you're somewhere wild?",single_select,adventure_score>=50,0.6,Distinguishes high-intensity activities from scenic/nature-adjacent ones
+P03,Personality,Food (depth),Street food chaos or a proper sit-down table?,single_select,food_score>=50,0.5,Filters Food-tagged experiences by formality
+P04,Personality,Culture (depth),"More into the history and stories, or the art and architecture?",single_select,culture_score>=50,0.5,Sub-tags Culture experiences for finer matching
+P05,Personality,Nightlife (depth),"Dancing till 2am, or a couple of good drinks and done?",single_select,nightlife_score>=40,0.5,Filters Nightlife intensity
+P06,Personality,Relaxation (depth),"Total stillness, or relaxed but still moving around?",single_select,relaxation_score>=50,0.5,Feeds Pace Preference alongside the dedicated pace question
+P07,Personality,Photography (depth),"Are you planning the trip around the photos, or just happy if a few come out well?",single_select,photography_score>=50,0.4,Affects whether Photography-tagged experiences get prioritized in sequencing
+P08,Personality,Local Experiences (depth),"Want to meet locals and do what they do, or happy observing from a comfortable distance?",single_select,local_exp_score>=50,0.6,Strong Hidden-Gem-Hunter persona signal
+P09,Personality,Shopping (depth),"Hunting for something specific, or just enjoy browsing?",single_select,shopping_score>=40,0.4,Filters Shopping experiences by market vs mall type
+P10,Personality,Nature (depth),"Watching from a viewpoint, or actually getting into it (hiking, swimming, etc.)?",single_select,nature_score>=50,0.5,Distinguishes passive-scenic from active-nature experiences
+H01,Hidden Preferences,Crowds,"Big famous landmarks even if it means crowds, or smaller and quieter wins every time?",slider,,0.8,Direct input to disappointment-tag exclusion logic
+H02,Hidden Preferences,Walking,"Honestly, how much walking are you up for in a day?",single_select,,0.6,Excludes 'Too Much Walking' tagged experiences if low tolerance
+H03,Hidden Preferences,Long Flights,Be honest - how do you feel about long-haul flights?,single_select,trip_type==International,0.7,Filters destinations by flight_routes duration
+H04,Hidden Preferences,Kid-Friendliness,"If kids are coming, how important is it that everything is genuinely kid-proof, not just kid-tolerant?",slider,group_type==Family,0.7,Tightens age_suitability filtering
+H05,Hidden Preferences,Elderly Comfort,Anyone in the group who needs a gentler pace or easier mobility?,toggle,,0.7,Filters out high-physical-intensity experiences
+H06,Hidden Preferences,Noise Sensitivity,Buzzing energy or peace and quiet - which recharges you?,single_select,,0.4,Secondary filter on Nightlife/Local Market experiences
+H07,Hidden Preferences,Connectivity,"How much do you need to stay connected (work, calls) during this trip?",single_select,,0.3,Flags destinations/stays with known connectivity gaps
+H08,Hidden Preferences,Spice Tolerance,How adventurous are you with spicy or unfamiliar food?,single_select,,0.3,Tunes Food experience recommendations
+H09,Hidden Preferences,Heat/Sun Tolerance,Be honest about your heat tolerance - it changes everything about pacing.,single_select,,0.5,Affects itinerary time-of-day sequencing in hot destinations
+H10,Hidden Preferences,Motion Sensitivity,"Do boats, winding roads, or turbulence get to you?",toggle,,0.4,Flags Cruise/Road Trip experiences for a caution note
+H11,Hidden Preferences,Spontaneity,"Do you want a tight plan, or just the highlights with room to wander?",slider,,0.6,Feeds Pace Preference directly
+H12,Hidden Preferences,Social Battery,"Even on a group trip, do you need pockets of alone time?",toggle,group_type!=Solo,0.4,Flags itinerary density warnings for group trips
+H13,Hidden Preferences,Morning vs Night,"Are you up and out early, or a slower starter?",single_select,,0.4,Affects time-of-day sequencing of activities
+H14,Hidden Preferences,Photography Priority,Will you actually stop the group to get the shot?,toggle,photography_score>=60,0.3,Pads itinerary timing around high-Photography experiences
+H15,Hidden Preferences,Dietary,Any dietary needs we should plan meals around?,multi_select,,0.8,Hard filter on Food-relevant experiences
+H16,Hidden Preferences,Accessibility,Any mobility or accessibility needs we should know about?,free_text,,0.8,"Hard filter, flagged for human Agent review before confirming"
+H17,Hidden Preferences,Safety Priority,How much does the safety reputation of a place factor into where you'll go?,slider,,0.5,Weights destination recommendation alongside visa/supplier-coverage filters
+H18,Hidden Preferences,Souvenir Shopping,Do you usually set aside separate money for shopping/souvenirs?,toggle,,0.3,Informs whether Shopping experiences get budget-aware framing
+H19,Hidden Preferences,Jet Lag Sensitivity,Does jet lag hit you hard?,toggle,trip_type==International,0.3,Affects suggested arrival-day pacing
+H20,Hidden Preferences,Control vs Surprise,"Do you want to know exactly what's happening each day, or are you fine being surprised?",single_select,,0.5,Affects how much itinerary detail gets shown upfront vs revealed day-of
+S01,Spending Psychology,Budget Rigidity,"Is that budget a hard line, or is there some give if something's worth it?",single_select,,1.0,Sets Budget Persona flexibility tier directly
+S02,Spending Psychology,Extend Willingness,"If one extra day made the trip noticeably better, would you consider it?",single_select,,0.7,Feeds Extra-Day upsell eligibility (Upsell Score input)
+S03,Spending Psychology,Hotel Upgrade Willingness,Would you pay more for a noticeably nicer place to stay?,single_select,,0.7,Feeds Hotel Upgrade upsell eligibility
+S04,Spending Psychology,Experience Upgrade Willingness,"Same question, but for experiences instead of hotels - worth paying more for the better version?",single_select,,0.7,Feeds Premium Experience upsell eligibility
+S05,Spending Psychology,Splurge Pattern,"Do you usually splurge on one big thing, or spread the budget evenly?",single_select,,0.5,Informs whether upsells get framed as one big splurge vs small add-ons
+S06,Spending Psychology,Flight vs Experience Priority,"If you had to cut cost somewhere, would it be the flight or the experiences?",single_select,,0.5,Tunes package tier recommendation tradeoffs
+S07,Spending Psychology,Booking Timing,"Do you usually lock things in early, or wait for a deal?",single_select,,0.3,Informs urgency/scarcity messaging appropriateness
+S08,Spending Psychology,Installment Interest,Would paying in installments make a bigger trip feel more doable?,toggle,,0.4,Flags interest in EMI/payment-plan options for the booking step
+S09,Spending Psychology,Insurance Interest,How much do you think about travel insurance when booking?,single_select,,0.3,Informs whether insurance is offered proactively or left optional
+S10,Spending Psychology,On-Trip Upgrade Openness,"Once you're actually there, are you usually open to a spontaneous upgrade (better table, better view)?",toggle,,0.5,Signals for Agent to mention day-of upgrade options
+S11,Spending Psychology,Group Cost Splitting,"If this is a group trip, is everyone splitting evenly, or is the budget really just yours?",single_select,group_size>1,0.4,Affects whether budget questions are answered as 'total' or 'my share'
+S12,Spending Psychology,Hidden Gems Value,Would you pay a bit more for something only locals would know about?,single_select,,0.5,"Direct input to Hidden Gems framing, though this upsell is always offered regardless"
+S13,Spending Psychology,Tipping Comfort,How comfortable are you with tipping norms in unfamiliar places?,single_select,trip_type==International,0.2,"Minor - informs pre-trip guidance content, not recommendation logic"
+S14,Spending Psychology,Currency Anxiety,Does thinking in a foreign currency make you over- or under-spend?,single_select,trip_type==International,0.2,Informs whether running price shows INR-only or dual-currency
+S15,Spending Psychology,Regret Aversion,"After a trip, are you more likely to regret spending too much, or not spending enough?",single_select,,0.6,Strong signal for Aspirational Dreamer vs Luxury Indulger persona disambiguation
