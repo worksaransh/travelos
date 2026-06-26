@@ -1,4 +1,4 @@
-const { validateAIItinerary } = require("./lib/ai/validator");
+const { validateAIItinerary } = require("../lib/ai/validator");
 
 async function runTests() {
   console.log("==========================================");

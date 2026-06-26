@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { validateAIItinerary } from "./ai/validator";
+import { encryptLeadData } from "./utils";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlc3RpbmciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNDY4ODAwMCwiZXhwIjoyMDQwMjY0MDAwfQ.dummy-anon-key";
@@ -487,6 +488,52 @@ export async function classifyTravelPersona(profileId: string): Promise<{ travel
     const foodScore = scoreMap["Food"] || 50;
     const adventureScore = scoreMap["Adventure"] || 50;
 
+    // Define helper evaluator for database condition JSON
+    function evaluateConditionLogic(cond: any, context: any): boolean {
+      if (!cond) return false;
+      if (cond.fallback === true) {
+        const maxScore = Math.max(...Object.values(context.score_map || {}) as number[]);
+        return maxScore <= 60;
+      }
+      
+      if (cond.top_dimensions && Array.isArray(cond.top_dimensions)) {
+        const isTop23 = cond.top_dimensions.length === 3;
+        const topLimit = isTop23 ? 3 : 2;
+        const matchCount = context.top_dimensions.slice(0, topLimit).filter((d: string) => 
+          cond.top_dimensions.includes(d)
+        ).length;
+        if (isTop23) {
+          return matchCount >= 2;
+        } else {
+          return matchCount >= cond.top_dimensions.length;
+        }
+      }
+
+      if (cond.and && Array.isArray(cond.and)) {
+        return cond.and.every((sub: any) => evaluateConditionLogic(sub, context));
+      }
+
+      if (cond.or && Array.isArray(cond.or)) {
+        return cond.or.some((sub: any) => evaluateConditionLogic(sub, context));
+      }
+
+      if (cond.field) {
+        const val = context[cond.field];
+        const op = cond.operator;
+        const ruleVal = cond.value;
+
+        if (op === "equals") return String(val) === String(ruleVal);
+        if (op === "gt") return Number(val) > Number(ruleVal);
+        if (op === "lt") return Number(val) < Number(ruleVal);
+        if (op === "in" && Array.isArray(ruleVal)) return ruleVal.includes(val);
+        if (op === "contains") {
+          if (Array.isArray(val)) return val.includes(ruleVal);
+          return String(val).includes(String(ruleVal));
+        }
+      }
+      return false;
+    }
+
     // 4. Query classification rules ordered from DB
     const { data: rules } = await supabase
       .from("persona_classification_rules")
@@ -494,91 +541,39 @@ export async function classifyTravelPersona(profileId: string): Promise<{ travel
       .order("rule_order", { ascending: true });
 
     if (rules && rules.length > 0) {
-      // Fetch personas map to get names
       const { data: personasList } = await supabase.from("personas").select("id, name");
       const personaNameMap: Record<string, string> = {};
       personasList?.forEach((p) => {
         personaNameMap[p.id] = p.name;
       });
 
-      // Sequential evaluation of rules
+      // Context object for dynamic evaluator
+      const context = {
+        occasion,
+        group_type: groupType,
+        budget_value: budgetValue,
+        budget_type: budgetType,
+        hotel_category: hotelCategory,
+        hidden_gems: hiddenGems,
+        budget_persona: budgetPersona,
+        luxury_score: luxuryScore,
+        relaxation_score: relaxationScore,
+        culture_score: cultureScore,
+        food_score: foodScore,
+        adventure_score: adventureScore,
+        romance_adjacent_high: luxuryScore >= 60 || relaxationScore >= 60 || foodScore >= 60,
+        adventure_culture_dominate: adventureScore >= 75 || cultureScore >= 75,
+        top_dimensions: sortedDims,
+        score_map: scoreMap
+      };
+
       for (const rule of rules) {
-        const cond = rule.condition_logic as any;
+        const cond = rule.condition_logic;
         const personaName = personaNameMap[rule.resulting_persona_id || ""];
         if (!personaName) continue;
 
-        // Evaluate Rule 1: Occasion = Business
-        if (rule.rule_order === 1 && occasion === "Business") {
+        if (evaluateConditionLogic(cond, context)) {
           return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 2: Honeymoon/Anniversary AND romance-adjacent high
-        if (rule.rule_order === 2 && (occasion === "Honeymoon" || occasion === "Anniversary")) {
-          const romanceHigh = luxuryScore >= 60 || relaxationScore >= 60 || foodScore >= 60;
-          if (romanceHigh) {
-            return { travelPersona: personaName, budgetPersona };
-          }
-        }
-
-        // Evaluate Rule 3: Group = Family (unless Adventure/Culture dominate heavily)
-        if (rule.rule_order === 3 && groupType === "family") {
-          const adventureCultureDominate = adventureScore >= 75 || cultureScore >= 75;
-          if (!adventureCultureDominate) {
-            return { travelPersona: personaName, budgetPersona };
-          }
-        }
-
-        // Evaluate Rule 4: Luxury Score > 60 AND Budget = Value-Conscious/Strict
-        if (rule.rule_order === 4 && luxuryScore > 60 && budgetPersona === "Value-Conscious/Strict") {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 5: Relaxation+Nature
-        if (rule.rule_order === 5 && sortedDims.slice(0, 2).includes("Relaxation") && sortedDims.slice(0, 2).includes("Nature")) {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 6: Adventure+Nature
-        if (rule.rule_order === 6 && sortedDims.slice(0, 2).includes("Adventure") && sortedDims.slice(0, 2).includes("Nature")) {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 7: Culture+Local Experiences+Photography (top-2/3 match rule)
-        if (rule.rule_order === 7) {
-          const matchCount = sortedDims.slice(0, 3).filter((d) => 
-            d === "Culture" || d === "Local Experiences" || d === "Photography"
-          ).length;
-          if (matchCount >= 2) {
-            return { travelPersona: personaName, budgetPersona };
-          }
-        }
-
-        // Evaluate Rule 8: Luxury+flexible budget
-        if (rule.rule_order === 8 && sortedDims.slice(0, 2).includes("Luxury") && budgetPersona === "Flexible") {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 9: Nightlife+Shopping
-        if (rule.rule_order === 9 && sortedDims.slice(0, 2).includes("Nightlife") && sortedDims.slice(0, 2).includes("Shopping")) {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 10: Food+Local Experiences
-        if (rule.rule_order === 10 && sortedDims.slice(0, 2).includes("Food") && sortedDims.slice(0, 2).includes("Local Experiences")) {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 11: Local Experiences + hidden gems
-        if (rule.rule_order === 11 && sortedDims.slice(0, 2).includes("Local Experiences") && hiddenGems === "yes") {
-          return { travelPersona: personaName, budgetPersona };
-        }
-
-        // Evaluate Rule 12: Fallback (no dimension > 60)
-        if (rule.rule_order === 12) {
-          const maxScore = Math.max(...Object.values(scoreMap));
-          if (maxScore <= 60) {
-            return { travelPersona: personaName, budgetPersona };
-          }
         }
       }
     }
@@ -654,7 +649,7 @@ export async function submitWhatsAppLead(profileId: string, whatsapp: string) {
     const { error: le } = await supabase.from("leads").insert({
       user_id: userId,
       capture_gate: "gate1_whatsapp",
-      whatsapp_number: whatsapp,
+      whatsapp_number: encryptLeadData(whatsapp),
       consent_given: true,
       consent_timestamp: new Date().toISOString(),
       consent_version: "v1"
@@ -760,6 +755,7 @@ export async function generateItineraryForProfile(
           name,
           category,
           price_band,
+          age_suitability,
           experience_dimension_tags (
             weight,
             dimension_tag_id
@@ -778,8 +774,27 @@ export async function generateItineraryForProfile(
         tagIdMap[t.id] = t.dimension_name;
       });
 
+      // Check if travelers include kids (T0_Q8 is Family or children input present)
+      const companionType = answers["T0_Q8"] || "";
+      const childAgesVal = answers["T0_Q8A"];
+      const hasChildren = companionType === "Family" || (Array.isArray(childAgesVal) && childAgesVal.length > 0);
+
+      let processedExperiences = dbExperiences || [];
+      if (hasChildren) {
+        processedExperiences = processedExperiences.filter((exp: any) => {
+          const suitability = (exp.age_suitability || "").toLowerCase();
+          const cat = (exp.category || "").toLowerCase();
+          return suitability !== "adults_only" && 
+                 cat !== "nightlife" && 
+                 cat !== "bars" && 
+                 cat !== "clubs" && 
+                 !exp.name.toLowerCase().includes("pub crawl") && 
+                 !exp.name.toLowerCase().includes("nightclub");
+        });
+      }
+
       // Compute dot-product match score: Sum(slider * tag_weight)
-      const ranked = (dbExperiences || []).map((exp: any) => {
+      const ranked = processedExperiences.map((exp: any) => {
         let score = 0;
         exp.experience_dimension_tags?.forEach((link: any) => {
           const dimName = tagIdMap[link.dimension_tag_id];
@@ -1008,7 +1023,7 @@ export async function checkoutBookingGate(
     const { error: le } = await supabase.from("leads").insert({
       user_id: userId,
       capture_gate: "gate2_full",
-      email: email,
+      email: encryptLeadData(email),
       name: name,
       preferred_contact_time: preferredTime,
       consent_given: true,

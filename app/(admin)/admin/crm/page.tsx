@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { decryptLeadData } from "@/lib/utils";
 import { Plus, Kanban as KanbanIcon, ListFilter, Phone, Mail, FileText, CheckSquare, ChevronRight, AlertTriangle } from "lucide-react";
 
 interface Lead {
@@ -49,11 +50,13 @@ export default function LeadCRMAdmin() {
       // we map it dynamically or keep it in client memory/metadata)
       const formatted: Lead[] = (data || []).map((l: any, idx: number) => {
         const stages: Lead["stage"][] = ["New", "Contacted", "Proposal", "Negotiating", "Booked"];
+        const decryptedWhatsapp = decryptLeadData(l.whatsapp_number || "");
+        const decryptedEmail = decryptLeadData(l.email || "");
         return {
           id: l.id,
-          name: l.name || `WhatsApp Lead ${l.whatsapp_number || ""}`,
-          email: l.email || "no-email@journey.os",
-          whatsapp_number: l.whatsapp_number || "",
+          name: l.name || `WhatsApp Lead ${decryptedWhatsapp}`,
+          email: decryptedEmail || "no-email@journey.os",
+          whatsapp_number: decryptedWhatsapp,
           capture_gate: l.capture_gate || "gate1_whatsapp",
           preferred_contact_time: l.preferred_contact_time || "Morning",
           consent_given: l.consent_given,

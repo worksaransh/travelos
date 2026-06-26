@@ -227,9 +227,9 @@ export default function ItineraryHubPage() {
             </div>
           </div>
 
-          <Link href={`/itinerary/${itineraryId}/book`}>
+          <Link href={`/itinerary/${itineraryId}/bundle`}>
             <button className="w-full bg-marigold hover:bg-marigold/90 text-white font-bold py-4 rounded-xl shadow-md transition text-xs">
-              Confirm & Book Itinerary
+              Customize & Book Bundle →
             </button>
           </Link>
         </div>
